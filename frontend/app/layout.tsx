@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Figtree, Lexend } from "next/font/google";
+import { Figtree, Lexend, Comfortaa } from "next/font/google";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -12,6 +12,12 @@ const lexend = Lexend({
   variable: "--font-lexend",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+});
+
+const comfortaa = Comfortaa({
+  variable: "--font-comfortaa",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${figtree.variable} ${lexend.variable} h-full antialiased`}
+      className={`${figtree.variable} ${lexend.variable} ${comfortaa.variable} h-full antialiased`}
     >
       <head>
         <link

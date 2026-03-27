@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react';
+import Link from 'next/link';
 import { Camera, Edit, Share, Diamond, Zap, MessageSquare, ArrowLeft, Send, CheckCircle2, ChevronDown, Radio, ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function CreatorAboutPage() {
@@ -16,9 +17,9 @@ export default function CreatorAboutPage() {
             <button className="px-6 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
                Log In
             </button>
-            <button className="px-6 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+            <Link href="/user/creator/post/checkout/upi" className="px-6 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
                Subscribe
-            </button>
+            </Link>
             <button className="px-6 py-2.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
                Membership
             </button>

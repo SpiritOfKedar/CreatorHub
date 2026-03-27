@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="video">
+<path id="Vector" d="M10.4454 17.0188H5.17872C2.54539 17.0188 1.67039 15.2688 1.67039 13.5105V6.49382C1.67039 3.86049 2.54539 2.98549 5.17872 2.98549H10.4454C13.0787 2.98549 13.9537 3.86049 13.9537 6.49382V13.5105C13.9537 16.1438 13.0704 17.0188 10.4454 17.0188Z" stroke="var(--stroke-0, #3A3A3A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M16.2601 14.2515L13.9435 12.6265V7.36817L16.2601 5.74317C17.3935 4.9515 18.3268 5.43484 18.3268 6.8265V13.1765C18.3268 14.5682 17.3935 15.0515 16.2601 14.2515Z" stroke="var(--stroke-0, #3A3A3A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M9.57961 9.16481C10.27 9.16481 10.8296 8.60516 10.8296 7.91481C10.8296 7.22445 10.27 6.66481 9.57961 6.66481C8.88926 6.66481 8.32961 7.22445 8.32961 7.91481C8.32961 8.60516 8.88926 9.16481 9.57961 9.16481Z" stroke="var(--stroke-0, #3A3A3A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" opacity="0" d="M19.5 0.5V19.5H0.5V0.5H19.5Z" stroke="var(--stroke-0, #3A3A3A)"/>
+</g>
+</svg>

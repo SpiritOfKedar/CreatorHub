@@ -1,11 +1,26 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
 import { MapPin, Mail, Phone } from "lucide-react";
 
+// Other imports remain unchanged
 const imgSkillIconsInstagram = "http://localhost:3845/assets/2b6a9ed067c444fe86379649a2be85e74afef14b.svg";
 const imgLogosTwitter = "http://localhost:3845/assets/74ba57afdcd660cdb8118f5713159f22097ae08e.svg";
 const imgLogosLinkedinIcon = "http://localhost:3845/assets/8a9c903accf577faa3ba62b268f85eaf0b73b103.svg";
 const imgLogosFacebook = "http://localhost:3845/assets/370fa8f46ceb9c3f6f826688aac8c4a4532593ad.svg";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (
+    pathname?.startsWith('/role-selection') ||
+    pathname?.startsWith('/explore-as-fan') ||
+    pathname?.startsWith('/user') ||
+    pathname?.startsWith('/livestream')
+  ) {
+    return null;
+  }
+
   return (
     <footer className="w-full bg-[#f9fafb]">
       <div className="max-w-[1440px] mx-auto px-5 md:px-[64px] py-10 md:py-[64px] flex flex-col gap-16">
