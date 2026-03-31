@@ -1,14 +1,26 @@
 import Link from 'next/link';
 
 interface PostMetadataProps {
+  postId: string;
   creatorName?: string;
   category?: string;
   price?: number;
   likes?: number;
   comments?: number;
+  isFavorited?: boolean;
+  onFavoriteToggle?: () => void;
 }
 
-export default function PostMetadata({ creatorName, category, price, likes, comments }: PostMetadataProps) {
+export default function PostMetadata({ 
+  postId, 
+  creatorName, 
+  category, 
+  price, 
+  likes, 
+  comments, 
+  isFavorited = false, 
+  onFavoriteToggle 
+}: PostMetadataProps) {
   return (
     <div className="flex justify-between items-start w-full max-w-[1119px] shrink-0 mt-[20px]">
       
@@ -45,12 +57,20 @@ export default function PostMetadata({ creatorName, category, price, likes, comm
       <div className="flex gap-[8px] items-center shrink-0">
         
         {/* Wishlist Button */}
-        <button className="bg-[#faf8f5] border border-[#d8d1c7] hover:bg-[#f6f4f1] transition-colors flex gap-[4px] h-[44px] items-center justify-center p-[12px] rounded-[36px]">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-            <path d="M12.62 20.8101C12.28 20.9301 11.72 20.9301 11.38 20.8101C8.48 19.8201 2 15.6901 2 8.6901C2 5.6001 4.49 3.1001 7.56 3.1001C9.38 3.1001 10.99 3.9801 12 5.3401C13.01 3.9801 14.63 3.1001 16.44 3.1001C19.51 3.1001 22 5.6001 22 8.6901C22 15.6901 15.52 19.8201 12.62 20.8101Z" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <button 
+          onClick={onFavoriteToggle}
+          className={`${isFavorited ? 'bg-[#fff5f5] border-[#fecaca]' : 'bg-[#faf8f5] border-[#d8d1c7]'} hover:opacity-80 transition-all flex gap-[4px] h-[44px] items-center justify-center p-[12px] rounded-[36px]`}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill={isFavorited ? "#F95C4B" : "none"} xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+            <path d="M12.62 20.8101C12.28 20.9301 11.72 20.9301 11.38 20.8101C8.48 19.8201 2 15.6901 2 8.6901C2 5.6001 4.49 3.1001 7.56 3.1001C9.38 3.1001 10.99 3.9801 12 5.3401C13.01 3.9801 14.63 3.1001 16.44 3.1001C19.51 3.1001 22 5.6001 22 8.6901C22 15.6901 15.52 19.8201 12.62 20.8101Z" 
+              stroke={isFavorited ? "#F95C4B" : "#1A1A1A"} 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
           </svg>
-          <span className="font-['Figtree',sans-serif] font-medium leading-[18.3px] text-[#1a1a1a] text-[13px] tracking-[0.26px]">
-            Add to wishlist
+          <span className={`font-['Figtree',sans-serif] font-medium leading-[18.3px] text-[13px] tracking-[0.26px] ${isFavorited ? 'text-[#f95c4b]' : 'text-[#1a1a1a]'}`}>
+            {isFavorited ? 'Favorited' : 'Add to Favourites'}
           </span>
         </button>
 

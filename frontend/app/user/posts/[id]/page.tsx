@@ -11,12 +11,23 @@ import CommentsSection from '@/src/components/CreatorPost/CommentsSection';
 import RelatedCreators from '@/src/components/CreatorPost/RelatedCreators';
 import MembershipModal from '@/src/components/CreatorProfile/MembershipModal';
 import api from '@/src/lib/api';
+import toast from 'react-hot-toast';
 
 export default function UserPostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isMemModalOpen, setIsMemModalOpen] = useState(false);
+
+  const handleFavoriteToggle = async () => {
+    try {
+      const res = await api.post(`/user/posts/${id}/favorite`);
+      setPost((prev: any) => ({ ...prev, isFavorited: res.data.isFavorited }));
+      toast.success(res.data.isFavorited ? 'Added to library' : 'Removed from library');
+    } catch (err) {
+      toast.error('Failed to update favorite status');
+    }
+  };
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -75,11 +86,14 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
           />
           
           <PostMetadata 
+            postId={post._id}
             creatorName={creatorName}
             category={post.category}
             price={post.price}
             likes={post.likes}
             comments={post.comments}
+            isFavorited={post.isFavorited}
+            onFavoriteToggle={handleFavoriteToggle}
           />
           
           <PostDetails description={post.hasAccess ? post.description : "This content is exclusive to members."} />
@@ -90,7 +104,8 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
               initialLikes={post.likes} 
               initialDislikes={post.dislikes} 
               initialUserReaction={post.userReaction} 
-              initialIsFavorited={post.isFavorited}
+              isFavorited={post.isFavorited}
+              onFavoriteToggle={handleFavoriteToggle}
             />
           )}
 

@@ -17,7 +17,7 @@ interface ProfileActionsProps {
 export default function ProfileActions({ 
   creatorId, 
   creatorUserId,
-  creatorName = 'Alex Morgan',
+  creatorName = 'Creator',
   subscriptionPrice = 4.99,
   isInitialSubscribed = false 
 }: ProfileActionsProps) {
@@ -65,7 +65,13 @@ export default function ProfileActions({
         </button>
 
         <button 
-          onClick={() => !isSubscribed && setIsMemModalOpen(true)}
+          onClick={() => {
+            if (isSubscribed) {
+              toast.success('You have already taken the membership!');
+            } else {
+              setIsMemModalOpen(true);
+            }
+          }}
           className={`${isSubscribed ? 'bg-green-50 border-green-200 text-green-700' : 'bg-[#faf8f5] border-[#d8d1c7] text-[#1a1a1a]'} border flex gap-[4px] items-center justify-center px-[12px] py-[8px] rounded-[36px] hover:bg-white transition-colors cursor-pointer`}
         >
           <Image 
