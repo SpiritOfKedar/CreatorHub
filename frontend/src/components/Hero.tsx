@@ -146,7 +146,7 @@ export default function Hero() {
       {/* ── Center CTA Button ── */}
       <div className="absolute left-1/2 -translate-x-1/2 bottom-[40px] sm:bottom-auto sm:top-[694px] z-20">
         <Link
-          href="/login"
+          href="/signup"
           className="flex items-center gap-2 px-6 py-3 rounded-full border border-[#ff9465] text-[#f6f4f1] font-normal text-base cursor-pointer hover:scale-105 transition-transform"
           style={{
             fontFamily: "'Lexend', sans-serif",

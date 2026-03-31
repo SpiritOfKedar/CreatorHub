@@ -26,7 +26,7 @@ export default function CreatorsBanner() {
         </div>
 
         <div className="flex flex-col items-center md:items-end gap-4 shrink-0">
-          <Link href="/login" className="bg-[#f6f4f1] border border-[#ff9465] text-[#1a1a1a] flex items-center justify-center gap-2 px-6 py-4 rounded-full shadow-[8px_8px_20px_0px_rgba(69,9,0,0.16)] hover:bg-white transition-colors duration-300">
+          <Link href="/signup" className="bg-[#f6f4f1] border border-[#ff9465] text-[#1a1a1a] flex items-center justify-center gap-2 px-6 py-4 rounded-full shadow-[8px_8px_20px_0px_rgba(69,9,0,0.16)] hover:bg-white transition-colors duration-300">
             <span
               className="font-normal text-[16px]"
               style={{ fontFamily: "'Lexend', sans-serif" }}

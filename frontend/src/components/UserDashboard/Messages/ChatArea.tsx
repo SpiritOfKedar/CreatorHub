@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { Info, AlignLeft, Italic, Bold, Paperclip } from 'lucide-react';
+import { Info } from 'lucide-react';
 import MessageBubble, { ChatMessage } from './MessageBubble';
 import { Conversation } from './ConversationItem';
+import RichTextEditor from './RichTextEditor';
 
 interface ChatAreaProps {
   conversation: Conversation;
   messages: ChatMessage[];
+  onSendMessage?: (content: string) => void;
 }
 
-export default function ChatArea({ conversation, messages }: ChatAreaProps) {
+export default function ChatArea({ conversation, messages, onSendMessage }: ChatAreaProps) {
+  const [messageContent, setMessageContent] = useState('');
+
+  const handleSend = () => {
+    if (!messageContent || messageContent === '<p></p>') return;
+    
+    if (onSendMessage) {
+      onSendMessage(messageContent);
+    } else {
+      console.log('Sending message:', messageContent);
+    }
+    
+    setMessageContent('');
+  };
+
   return (
     <div className="bg-[var(--bg,#f6f4f1)] flex flex-col h-screen flex-1 relative min-w-0">
       {/* Header */}
@@ -43,22 +59,13 @@ export default function ChatArea({ conversation, messages }: ChatAreaProps) {
       </div>
 
       {/* Input Area */}
-      <div className="absolute bottom-[24px] left-[24px] right-[24px] bg-white border border-[var(--alt-sec,#e4ded2)] rounded-[12px] h-[120px] shadow-sm z-20 flex flex-col justify-between p-[16px]">
-        <textarea 
-          placeholder="Write your message here"
-          className="w-full resize-none outline-none font-[family-name:var(--font-inter)] font-medium text-[14px] text-[#1a1a1a] placeholder:text-[#aaa] bg-transparent flex-1"
+      <div className="absolute bottom-[24px] left-[24px] right-[24px] bg-white border border-[var(--alt-sec,#e4ded2)] rounded-[12px] min-h-[140px] shadow-sm z-20 flex flex-col p-[16px]">
+        <RichTextEditor 
+          content={messageContent}
+          onChange={setMessageContent}
+          onSend={handleSend}
+          placeholder="Write your message here..."
         />
-        <div className="flex items-center justify-between mt-[8px]">
-          <div className="flex items-center gap-[20px] text-[#1a1a1a]">
-            <button className="hover:text-black transition-colors"><AlignLeft className="size-[16px]" /></button>
-            <button className="hover:text-black transition-colors"><Italic className="size-[16px]" /></button>
-            <button className="hover:text-black transition-colors"><Bold className="size-[16px]" /></button>
-            <button className="hover:text-black transition-colors"><Paperclip className="size-[16px]" /></button>
-          </div>
-          <button className="bg-[var(--cta,#f95c4b)] hover:bg-[#ff7a6c] transition-colors border border-[var(--light-shade1,#ff7a6c)] rounded-[40px] px-[18px] py-[10px] text-white font-[family-name:var(--font-inter)] font-medium text-[14px]">
-            Send
-          </button>
-        </div>
       </div>
     </div>
   );

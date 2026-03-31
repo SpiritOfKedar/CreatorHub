@@ -21,6 +21,7 @@ const creatorSchema = mongoose.Schema(
       total: { type: Number, default: 24892.50 },
       thisMonth: { type: Number, default: 4250.00 },
     },
+    subscriptionPrice: { type: Number, default: 4.99 },
     payoutSettings: {
       kyc: { 
         status: { type: String, enum: ['unverified', 'pending', 'verified'], default: 'unverified' },

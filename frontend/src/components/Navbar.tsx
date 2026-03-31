@@ -1,12 +1,16 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 export default function Navbar() {
+  const pathname = usePathname();
+
   const navLinks = [
-    { label: "Home", href: "/", active: true },
-    { label: "Marketplace", href: "#", active: false },
-    { label: "Features", href: "#", active: false },
-    { label: "Blogs", href: "#", active: false },
-    { label: "About Us", href: "/about", active: false },
+    { label: "Home", href: "/", active: pathname === "/" },
+    { label: "Marketplace", href: "/marketplace", active: pathname === "/marketplace" },
+    { label: "Features", href: "#", active: pathname === "/features" },
+    { label: "Blogs", href: "/blogs", active: pathname === "/blogs" },
+    { label: "About Us", href: "/about", active: pathname === "/about" },
   ];
 
   return (
@@ -68,7 +72,7 @@ export default function Navbar() {
 
         {/* Join as Creator CTA */}
         <Link
-          href="/login"
+          href="/signup"
           className="flex items-center gap-2 px-4 py-3 rounded-[42px] border border-[#ff9465] bg-[#f6f4f1] text-[#1a1a1a] text-base cursor-pointer hover:shadow-lg transition-shadow"
           style={{
             fontFamily: "'Lexend', sans-serif",
