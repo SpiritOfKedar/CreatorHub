@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Figtree, Lexend, Comfortaa } from "next/font/google";
 import "./globals.css";
+import Footer from "../src/components/Footer";
+import { Toaster } from 'react-hot-toast';
 
 const figtree = Figtree({
   variable: "--font-figtree",
@@ -26,9 +28,6 @@ export const metadata: Metadata = {
     "Join a new wave of creators building income, influence, and impact.",
 };
 
-import Footer from "../src/components/Footer";
-import { Toaster } from 'react-hot-toast';
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -45,7 +44,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col font-[var(--font-figtree)]">
+      <body className="min-h-full flex flex-col font-[var(--font-figtree)] bg-white">
         <Toaster position="bottom-right" />
         <div className="flex-1 shrink-0">{children}</div>
         <Footer />

@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { MapPin, Mail, Phone } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -10,7 +11,10 @@ export default function Footer() {
     pathname?.startsWith('/role-selection') ||
     pathname?.startsWith('/explore-as-fan') ||
     pathname?.startsWith('/user') ||
-    pathname?.startsWith('/livestream')
+    pathname?.startsWith('/livestream') ||
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/signup') ||
+    pathname?.startsWith('/verify-email')
   ) {
     return null;
   }
@@ -62,8 +66,8 @@ export default function Footer() {
                 Quick Links
               </h5>
               <div className="flex flex-col gap-3 text-[#4b5563] text-[16px]" style={{ fontFamily: "'Figtree', sans-serif" }}>
-                <a href="#" className="hover:text-black transition-colors">Home</a>
-                <a href="#" className="hover:text-black transition-colors">Explore Creators</a>
+                <Link href="/" className="hover:text-black transition-colors">Home</Link>
+                <Link href="/marketplace" className="hover:text-black transition-colors">Explore Creators</Link>
                 <a href="#" className="hover:text-black transition-colors">Categories</a>
                 <a href="#" className="hover:text-black transition-colors">Collections</a>
                 <a href="#" className="hover:text-black transition-colors">Pricing</a>

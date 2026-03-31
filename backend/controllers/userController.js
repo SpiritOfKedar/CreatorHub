@@ -157,53 +157,44 @@ exports.getCreatorProfile = async (req, res) => {
   }
 };
 
-// @desc    Get posts for a creator (only public unless follower/subscriber)
+// @desc    Get posts for a creator
 // @route   GET /api/user/creators/:id/posts
 exports.getCreatorPosts = async (req, res) => {
   try {
     const posts = await Post.find({ creatorId: req.params.id, status: 'published' }).sort({ createdAt: -1 });
-
+    
     let userId = null;
+    let memberships = [];
 
+    // Check if user is authenticated
     if (req.user) {
       userId = req.user._id;
+      const user = await User.findById(userId);
+      memberships = user?.memberships || [];
     } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
         userId = decoded.id;
-      } catch (error) {
-        userId = null;
+        const user = await User.findById(userId);
+        memberships = user?.memberships || [];
+      } catch (e) {
+        // Token invalid, ignore
       }
     }
 
-    const enrichedPosts = posts.map((post) => ({
-      ...post.toObject(),
-      userReaction: null,
-      likes: post.likes || 0,
-      dislikes: post.dislikes || 0,
-      comments: post.comments || 0,
-    }));
+    const filteredPosts = posts.map(post => {
+      const hasAccess = !post.isExclusive || memberships.some(mId => mId.toString() === post.creatorId.toString());
+      return {
+        ...post.toObject(),
+        hasAccess,
+        likes: post.likes || 0,
+        dislikes: post.dislikes || 0,
+        commentsCount: post.comments || 0,
+      };
+    });
 
-    if (!userId || posts.length === 0) {
-      return res.json(enrichedPosts);
-    }
-
-    const reactions = await Reaction.find({
-      user: userId,
-      post: { $in: posts.map((post) => post._id) },
-    }).select('post type');
-
-    const reactionByPost = new Map(
-      reactions.map((reaction) => [reaction.post.toString(), reaction.type])
-    );
-
-    res.json(
-      enrichedPosts.map((post) => ({
-        ...post,
-        userReaction: reactionByPost.get(post._id.toString()) || null,
-      }))
-    );
+    res.json(filteredPosts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -270,7 +261,6 @@ exports.getPostDetails = async (req, res) => {
     let userReaction = null;
     let userId = null;
 
-    // Check if user is authenticated (can be guest)
     if (req.user) {
       userId = req.user._id;
     } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -283,6 +273,9 @@ exports.getPostDetails = async (req, res) => {
       }
     }
 
+    let isFavorited = false;
+    let hasAccess = !post.isExclusive;
+    
     if (userId) {
       // Increment views and track unique viewers
       await Post.findByIdAndUpdate(req.params.id, {
@@ -294,14 +287,26 @@ exports.getPostDetails = async (req, res) => {
       if (reaction) {
         userReaction = reaction.type;
       }
+      
+      const user = await User.findById(userId);
+      if (user) {
+        if (user.favorites && user.favorites.includes(post._id)) {
+          isFavorited = true;
+        }
+        if (post.isExclusive && user.memberships && user.memberships.some(mId => mId.toString() === post.creatorId._id.toString())) {
+          hasAccess = true;
+        }
+      }
     } else {
-      // For guests, still increment total views but cannot track unique viewer by ID
+      // For guests
       await Post.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
     }
 
     res.json({
       ...post.toObject(),
       userReaction,
+      isFavorited,
+      hasAccess,
       likes: post.likes || 0,
       dislikes: post.dislikes || 0
     });
@@ -314,7 +319,6 @@ exports.getPostDetails = async (req, res) => {
 // @route   GET /api/user/following
 exports.getFollowingCreators = async (req, res) => {
   try {
-    // Dummy response for now (replace with real logic later)
     res.json({ message: "Following creators list" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -343,7 +347,7 @@ exports.searchCreators = async (req, res) => {
 // @route   POST /api/user/posts/:id/react
 exports.reactToPost = async (req, res) => {
   try {
-    const { type } = req.body; // 'like' or 'dislike'
+    const { type } = req.body;
     if (!['like', 'dislike'].includes(type)) {
       return res.status(400).json({ message: 'Invalid reaction type' });
     }
@@ -354,7 +358,6 @@ exports.reactToPost = async (req, res) => {
     const existingReaction = await Reaction.findOne({ user: req.user._id, post: post._id });
 
     if (!existingReaction) {
-      // Create new reaction
       await Reaction.create({ user: req.user._id, post: post._id, type });
       if (type === 'like') {
         post.likes += 1;
@@ -363,7 +366,6 @@ exports.reactToPost = async (req, res) => {
       }
       await post.save();
       
-      // Create notification for the creator
       try {
         const postCreator = await Creator.findById(post.creatorId);
         if (postCreator && postCreator.userId !== req.user._id.toString()) {
@@ -383,7 +385,6 @@ exports.reactToPost = async (req, res) => {
     }
 
     if (existingReaction.type === type) {
-      // Toggle off
       await Reaction.findByIdAndDelete(existingReaction._id);
       if (type === 'like') {
         post.likes = Math.max(0, post.likes - 1);
@@ -394,7 +395,6 @@ exports.reactToPost = async (req, res) => {
       return res.json({ likes: post.likes, dislikes: post.dislikes, userReaction: null });
     }
 
-    // Switch type
     await Reaction.findByIdAndUpdate(existingReaction._id, { type });
     if (type === 'like') {
       post.likes += 1;
@@ -412,7 +412,6 @@ exports.reactToPost = async (req, res) => {
 };
 
 // @desc    Get comments for a post
-// @route   GET /api/user/posts/:id/comments
 exports.getComments = async (req, res) => {
   try {
     const comments = await Comment.find({ post: req.params.id })
@@ -425,7 +424,6 @@ exports.getComments = async (req, res) => {
 };
 
 // @desc    Add a comment to a post
-// @route   POST /api/user/posts/:id/comments
 exports.addComment = async (req, res) => {
   try {
     const { content, parentCommentId } = req.body;
@@ -446,7 +444,6 @@ exports.addComment = async (req, res) => {
     post.comments = (post.comments || 0) + 1;
     await post.save();
 
-    // Create notification for the creator or parent commenter
     try {
       const postCreator = await Creator.findById(post.creatorId);
       
@@ -482,29 +479,17 @@ exports.addComment = async (req, res) => {
 };
 
 // @desc    Update a user comment
-// @route   PUT /api/user/comments/:commentId
-// @access  Private
 exports.updateComment = async (req, res) => {
   try {
     const { content } = req.body;
-
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Comment content is required' });
-    }
+    if (!content || !content.trim()) return res.status(400).json({ message: 'Comment content is required' });
 
     const comment = await Comment.findById(req.params.commentId);
-
-    if (!comment) {
-      return res.status(404).json({ message: 'Comment not found' });
-    }
-
-    if (comment.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'You can only edit your own comments' });
-    }
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+    if (comment.user.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Access denied' });
 
     comment.content = content.trim();
     await comment.save();
-
     const populatedComment = await Comment.findById(comment._id).populate('user', 'name avatar');
     res.json(populatedComment);
   } catch (err) {
@@ -513,116 +498,128 @@ exports.updateComment = async (req, res) => {
 };
 
 // @desc    Delete a user comment
-// @route   DELETE /api/user/comments/:commentId
-// @access  Private
 exports.deleteComment = async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.commentId);
-
-    if (!comment) {
-      return res.status(404).json({ message: 'Comment not found' });
-    }
-
-    if (comment.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'You can only delete your own comments' });
-    }
-
-    const idsToDelete = [comment._id];
-    let parentIds = [comment._id];
-
-    while (parentIds.length > 0) {
-      const childComments = await Comment.find({ parentComment: { $in: parentIds } }).select('_id');
-
-      if (childComments.length === 0) {
-        break;
-      }
-
-      const childIds = childComments.map((child) => child._id);
-      idsToDelete.push(...childIds);
-      parentIds = childIds;
-    }
-
-    const deleteResult = await Comment.deleteMany({ _id: { $in: idsToDelete } });
-    const deletedCount = deleteResult.deletedCount || 0;
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+    if (comment.user.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Access denied' });
 
     const post = await Post.findById(comment.post);
-    if (post && deletedCount > 0) {
-      post.comments = Math.max(0, (post.comments || 0) - deletedCount);
+    await Comment.deleteOne({ _id: comment._id });
+    
+    if (post) {
+      post.comments = Math.max(0, (post.comments || 0) - 1);
       await post.save();
     }
 
-    res.json({ message: 'Comment deleted', deletedCount });
+    res.json({ message: 'Comment deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // @desc    Get reviews for a creator
-// @route   GET /api/user/creators/:id/reviews
 exports.getCreatorReviews = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const totalCount = await Review.countDocuments({ creator: req.params.id });
-    
-    const reviews = await Review.find({ creator: req.params.id })
-      .populate('user', 'name avatar') // user might not have avatar in schema but we try
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    res.json({
-      reviews,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit)
-    });
+    const reviews = await Review.find({ creator: req.params.id }).populate('user', 'name avatar').sort({ createdAt: -1 });
+    res.json(reviews);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // @desc    Add a review to a creator
-// @route   POST /api/user/creators/:id/reviews
 exports.addCreatorReview = async (req, res) => {
   try {
     const { content, rating } = req.body;
-    
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Review content is required' });
-    }
-
-    const creatorId = req.params.id;
-
-    // Check for existing review
-    const existingReview = await Review.findOne({ user: req.user._id, creator: creatorId });
-    if (existingReview) {
-      return res.status(400).json({ message: 'You have already reviewed this creator' });
-    }
+    const existingReview = await Review.findOne({ user: req.user._id, creator: req.params.id });
+    if (existingReview) return res.status(400).json({ message: 'Already reviewed' });
 
     const newReview = await Review.create({
       user: req.user._id,
-      creator: creatorId,
-      content: content.trim(),
+      creator: req.params.id,
+      content,
       rating
     });
-
     const populatedReview = await Review.findById(newReview._id).populate('user', 'name avatar');
     res.status(201).json(populatedReview);
-
   } catch (err) {
-    // Handle mongoose unique index error separately if it slips through
-    if (err.code === 11000) {
-        return res.status(400).json({ message: 'You have already reviewed this creator' });
-    }
     res.status(500).json({ error: err.message });
   }
 };
 
-// @desc    Get replies for a review
-// @route   GET /api/user/reviews/:id/replies
+// @desc    Add a reply to a review
+exports.addReviewReply = async (req, res) => {
+  try {
+    const { content, parentReplyId } = req.body;
+    const newReply = await ReviewReply.create({
+      user: req.user._id,
+      review: req.params.id,
+      parentReply: parentReplyId || null,
+      content
+    });
+    const populatedReply = await ReviewReply.findById(newReply._id).populate('user', 'name avatar');
+    res.status(201).json(populatedReply);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Toggle favorite post
+exports.toggleFavoritePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    const user = await User.findById(req.user._id);
+    const isFavorited = user.favorites.some(favId => favId.toString() === post._id.toString());
+    if (isFavorited) {
+      user.favorites = user.favorites.filter(id => id.toString() !== post._id.toString());
+    } else {
+      user.favorites.push(post._id);
+    }
+    await user.save();
+    res.json({ success: true, isFavorited: !isFavorited });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Get all favorited posts
+exports.getFavoritePosts = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate({
+      path: 'favorites',
+      populate: { path: 'creatorId' }
+    });
+    res.json(user.favorites.filter(p => p !== null));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Toggle subscription
+exports.toggleSubscription = async (req, res) => {
+  try {
+    const creator = await Creator.findById(req.params.creatorId);
+    const user = await User.findById(req.user._id);
+    const isMember = user.memberships.some(id => id.toString() === creator._id.toString());
+    if (isMember) {
+      user.memberships = user.memberships.filter(id => id.toString() !== creator._id.toString());
+      creator.subscribers = creator.subscribers.filter(id => id.toString() !== user._id.toString());
+    } else {
+      user.memberships.push(creator._id);
+      creator.subscribers.push(user._id);
+      creator.earnings.total += (creator.subscriptionPrice || 0);
+      creator.earnings.thisMonth += (creator.subscriptionPrice || 0);
+    }
+    await user.save();
+    await creator.save();
+    res.json({ success: true, isMember: !isMember });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Get replies to a review
 exports.getReviewReplies = async (req, res) => {
   try {
     const replies = await ReviewReply.find({ review: req.params.id })
@@ -630,34 +627,6 @@ exports.getReviewReplies = async (req, res) => {
       .sort({ createdAt: 1 });
     res.json(replies);
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// @desc    Add a reply to a review
-// @route   POST /api/user/reviews/:id/replies
-exports.addReviewReply = async (req, res) => {
-  try {
-    const { content, parentReplyId } = req.body;
-    
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Reply content is required' });
-    }
-
-    const review = await Review.findById(req.params.id);
-    if (!review) return res.status(404).json({ message: 'Review not found' });
-
-    const newReply = await ReviewReply.create({
-      user: req.user._id,
-      review: review._id,
-      parentReply: parentReplyId || null,
-      content: content.trim()
-    });
-
-    const populatedReply = await ReviewReply.findById(newReply._id).populate('user', 'name avatar');
-    res.status(201).json(populatedReply);
-  } catch (err) {
-    console.error("Error adding review reply:", err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -108,7 +108,7 @@ export default function LoginPage() {
               </button>
 
               <Link
-                href="/role-selection"
+                href="/signup"
                 className="flex items-center justify-center gap-2 px-6 py-4 rounded-full border border-[#d8d1c7] text-[#1a1a1a] bg-white shadow-sm transition-all hover:bg-slate-50"
               >
                 <span>Don&apos;t have an account? Sign up</span>

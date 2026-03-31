@@ -22,7 +22,10 @@ const {
   getCreatorReviews,
   addCreatorReview,
   getReviewReplies,
-  addReviewReply
+  addReviewReply,
+  toggleFavoritePost,
+  getFavoritePosts,
+  toggleSubscription
 } = require('../controllers/userController');
 
 const {
@@ -51,9 +54,12 @@ router.get('/messages', getMessages);
 router.post('/messages', sendMessage);
 router.get('/following', getFollowingCreators);
 router.post('/follow/:creatorId', toggleFollowCreator);
+router.post('/subscribe/:creatorId', toggleSubscription);
 
 // Additional post interactions
 router.post('/posts/:id/react', reactToPost);
+router.post('/posts/:id/favorite', toggleFavoritePost);
+router.get('/favorites', getFavoritePosts);
 router.post('/posts/:id/comments', addComment);
 router.put('/comments/:commentId', updateComment);
 router.delete('/comments/:commentId', deleteComment);
