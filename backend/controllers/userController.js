@@ -151,7 +151,34 @@ exports.getCreatorProfile = async (req, res) => {
   try {
     const creator = await Creator.findById(req.params.id);
     if (!creator) return res.status(404).json({ message: 'Creator not found' });
-    res.json(creator);
+
+    let isSubscribed = false;
+    let userId = null;
+
+    // Check if user is authenticated
+    if (req.user) {
+      userId = req.user._id;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        userId = decoded.id;
+      } catch (e) {
+        // Token invalid, ignore
+      }
+    }
+
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user && user.memberships) {
+        isSubscribed = user.memberships.some(mId => mId.toString() === creator._id.toString());
+      }
+    }
+
+    res.json({
+      ...creator.toObject(),
+      isSubscribed
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

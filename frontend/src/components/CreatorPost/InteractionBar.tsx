@@ -11,15 +11,22 @@ interface InteractionBarProps {
   initialLikes: number;
   initialDislikes: number;
   initialUserReaction: 'like' | 'dislike' | null;
-  initialIsFavorited: boolean;
+  isFavorited: boolean;
+  onFavoriteToggle: () => void;
 }
 
-export default function InteractionBar({ postId, initialLikes, initialDislikes, initialUserReaction, initialIsFavorited }: InteractionBarProps) {
+export default function InteractionBar({ 
+  postId, 
+  initialLikes, 
+  initialDislikes, 
+  initialUserReaction, 
+  isFavorited, 
+  onFavoriteToggle 
+}: InteractionBarProps) {
   const { token } = useAuthStore();
   const [likes, setLikes] = useState(initialLikes);
   const [dislikes, setDislikes] = useState(initialDislikes);
   const [userReaction, setUserReaction] = useState<'like' | 'dislike' | null>(initialUserReaction);
-  const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
   const [loading, setLoading] = useState(false);
 
   const handleReaction = async (type: 'like' | 'dislike') => {
@@ -43,24 +50,12 @@ export default function InteractionBar({ postId, initialLikes, initialDislikes, 
     }
   };
 
-  const handleFavorite = async () => {
+  const handleFavorite = () => {
     if (!token) {
       toast.error('Please login to favorite this post');
       return;
     }
-
-    if (loading) return;
-    setLoading(true);
-
-    try {
-      const res = await api.post(`/user/posts/${postId}/favorite`);
-      setIsFavorited(res.data.isFavorited);
-      toast.success(res.data.isFavorited ? 'Added to library' : 'Removed from library');
-    } catch (error) {
-      toast.error('Failed to update favorite status');
-    } finally {
-      setLoading(false);
-    }
+    onFavoriteToggle();
   };
 
   return (
