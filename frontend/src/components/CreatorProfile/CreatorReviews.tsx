@@ -78,7 +78,7 @@ export default function CreatorReviews({ creatorId }: { creatorId?: string }) {
       
       <div className="flex items-center justify-center">
         <h2 className="font-['Figtree',sans-serif] font-semibold leading-[29.2px] text-[#1a1a1a] text-[19px] tracking-[0.38px]">
-          Reviews ( {totalCount.toLocaleString()} )
+          Reviews ( {(Number(totalCount) || 0).toLocaleString()} )
         </h2>
       </div>
 
