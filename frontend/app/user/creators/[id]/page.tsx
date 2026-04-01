@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { use } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardSidebar from '@/src/components/UserDashboard/DashboardSidebar';
 import ProfileBanner from '@/src/components/CreatorProfile/ProfileBanner';
 import ProfileHeader from '@/src/components/CreatorProfile/ProfileHeader';
@@ -10,12 +11,16 @@ import ProfileActions from '@/src/components/CreatorProfile/ProfileActions';
 import ConnectedLinks from '@/src/components/CreatorProfile/ConnectedLinks';
 import ContentTabs from '@/src/components/CreatorProfile/ContentTabs';
 import ProfileContentFeed from '@/src/components/CreatorProfile/ProfileContentFeed';
+import LivestreamFeed from '@/src/components/CreatorProfile/LivestreamFeed';
 import api from '@/src/lib/api';
 
 export default function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [creator, setCreator] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'posts';
 
   useEffect(() => {
     const fetchCreator = async () => {
@@ -70,8 +75,13 @@ export default function CreatorProfilePage({ params }: { params: Promise<{ id: s
               </div>
 
               <div className="flex flex-col gap-[24px] items-start w-full mt-[24px]">
-                <ContentTabs creatorId={id as string} />
-                <ProfileContentFeed creatorId={creator._id} />
+                <ContentTabs creatorId={id as string} defaultTab={currentTab} />
+                
+                {currentTab === 'livestreams' ? (
+                  <LivestreamFeed creatorId={creator._id} />
+                ) : (
+                  <ProfileContentFeed creatorId={creator._id} />
+                )}
               </div>
             </div>
           </div>
@@ -80,3 +90,4 @@ export default function CreatorProfilePage({ params }: { params: Promise<{ id: s
     </div>
   );
 }
+
