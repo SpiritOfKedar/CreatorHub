@@ -1,23 +1,53 @@
-import React from 'react';
+"use client";
+
+import React, { useMemo } from 'react';
 import DashboardSidebar from '@/src/components/UserDashboard/DashboardSidebar';
 import BalanceCard from '@/src/components/UserDashboard/Wallet/BalanceCard';
 import TransactionList from '@/src/components/UserDashboard/Wallet/TransactionList';
-import { Transaction } from '@/src/components/UserDashboard/Wallet/TransactionItem';
+import type { Transaction } from '@/src/components/UserDashboard/Wallet/TransactionItem';
+import { useWallet } from '@/UserWallet';
 
-// Mock data matching the Figma 466:94327 design specs
-const MOCK_TRANSACTIONS: Transaction[] = [
-  ...Array.from({ length: 6 }).map((_, i) => ({
-    id: `tx-${i}`,
-    title: 'Enrolled for this new even by creator name',
-    date: '23 Jan, 2025',
-    time: '3 : 25 pm',
-    amount: 1500,
-    image: '/assets/wallet/event-thumb.png',
-    type: 'purchase' as 'purchase',
-  }))
-];
+type WalletTransaction = {
+  _id?: string;
+  amount?: number;
+  type?: 'credit' | 'debit';
+  referenceId?: string;
+  createdAt?: string;
+};
 
 export default function WalletPage() {
+  const { balance, transactions, error } = useWallet();
+
+  const mappedTransactions = useMemo<Transaction[]>(() => {
+    if (!transactions?.length) return [];
+
+    return (transactions as WalletTransaction[]).map((tx, idx: number) => {
+      const createdAt = tx?.createdAt ? new Date(tx.createdAt) : new Date();
+      const type = tx?.type === 'credit' ? 'credit' : 'purchase';
+      const referenceId = tx?.referenceId ? ` #${tx.referenceId}` : '';
+
+      return {
+        id: String(tx?._id || `${createdAt.getTime()}-${idx}`),
+        title:
+          type === 'credit'
+            ? `Credits added to wallet${referenceId}`
+            : `Unlocked premium content${referenceId}`,
+        date: createdAt.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }),
+        time: createdAt.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit'
+        }).toLowerCase(),
+        amount: Number(tx?.amount || 0),
+        image: '/assets/wallet/event-thumb.png',
+        type: type as 'purchase' | 'credit' | 'refund'
+      };
+    });
+  }, [transactions]);
+
   return (
     <div className="min-h-screen bg-[var(--bg,#f6f4f1)] flex relative overflow-x-hidden">
       <DashboardSidebar />
@@ -35,11 +65,15 @@ export default function WalletPage() {
           </p>
         </div>
 
-        {/* Balance Card */}
-        <BalanceCard balance={4500} />
+        {error ? (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
 
-        {/* Transactions Section */}
-        <TransactionList transactions={MOCK_TRANSACTIONS} />
+        <BalanceCard balance={balance} />
+
+        <TransactionList transactions={mappedTransactions} />
 
       </main>
     </div>

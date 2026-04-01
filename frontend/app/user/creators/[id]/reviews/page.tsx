@@ -70,7 +70,7 @@ export default function CreatorReviewsPage({ params }: { params: Promise<{ id: s
               </div>
 
               <div className="flex flex-col gap-[24px] items-start w-full mt-[24px]">
-                <ContentTabs defaultTab="reviews" creatorId={id as string} contentCounts={creator.contentCounts} />
+                <ContentTabs defaultTab="reviews" creatorId={id as string} />
                 <CreatorReviews creatorId={creator._id} />
               </div>
             </div>

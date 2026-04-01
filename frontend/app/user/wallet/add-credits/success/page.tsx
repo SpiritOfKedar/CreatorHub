@@ -2,7 +2,22 @@ import React from 'react';
 import Link from 'next/link';
 import { BadgeCheck } from 'lucide-react';
 
-export default function AddCreditsSuccessPage() {
+type SuccessPageProps = {
+  searchParams: Promise<{
+    amount?: string;
+    tax?: string;
+    total?: string;
+  }>;
+};
+
+export default async function AddCreditsSuccessPage({ searchParams }: SuccessPageProps) {
+  const params = await searchParams;
+  const amount = Number(params.amount || 80);
+  const tax = Number(params.tax || 2);
+  const total = Number(params.total || amount + tax);
+
+  const formatMoney = (value: number) => `$ ${Number.isFinite(value) ? value : 0}`;
+
   return (
     <div className="bg-[var(--bg,#f6f4f1)] min-h-screen w-full flex relative items-center justify-center overflow-x-hidden p-[42px] sm:p-[20px]">
       <div className="flex flex-col gap-[42px] items-center w-full max-w-[775px]">
@@ -31,7 +46,7 @@ export default function AddCreditsSuccessPage() {
               Adding credit to my wallet
             </p>
             <div className="flex items-center flex-nowrap whitespace-nowrap leading-[0]">
-              <span className="font-[family-name:var(--font-fjalla)] font-normal text-[33px] leading-[48.6px] tracking-[0.66px] text-[#121212]">$80</span>
+              <span className="font-[family-name:var(--font-fjalla)] font-normal text-[33px] leading-[48.6px] tracking-[0.66px] text-[#121212]">${amount}</span>
               <span className="font-[family-name:var(--font-figtree)] font-light text-[32px] leading-normal text-[#8a8a8a] ml-1 mr-1">/</span>
               <span className="font-[family-name:var(--font-figtree)] font-medium text-[16px] leading-[25.8px] tracking-[0.32px] text-[#8a8a8a] mt-2">month</span>
             </div>
@@ -42,22 +57,22 @@ export default function AddCreditsSuccessPage() {
               <div className="flex flex-col gap-[8px] items-start w-full">
                 <div className="flex items-center justify-between w-full font-[family-name:var(--font-figtree)] font-medium text-[16px] leading-[25.8px] tracking-[0.32px] text-[var(--sub-head,#3a3a3a)]">
                   <span>Content name / event name</span>
-                  <span className="font-bold">$ 80</span>
+                  <span className="font-bold">{formatMoney(amount)}</span>
                 </div>
                 <div className="flex items-center justify-between w-full font-[family-name:var(--font-figtree)] font-medium text-[13px] leading-[18.3px] tracking-[0.26px] text-[var(--place-holder,#9a9a9a)]">
                   <span>Billed monthly</span>
-                  <span>$ 80</span>
+                  <span>{formatMoney(amount)}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between w-full font-[family-name:var(--font-figtree)] font-medium text-[16px] leading-[25.8px] tracking-[0.32px]">
                 <span className="text-[var(--sub-head,#3a3a3a)]">Tax</span>
-                <span className="font-bold text-[#272727]">$ 2</span>
+                <span className="font-bold text-[#272727]">{formatMoney(tax)}</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between w-full font-[family-name:var(--font-figtree)] font-bold text-[19px] leading-[29.2px] tracking-[0.38px] text-[var(--heading,#1a1a1a)]">
               <span>Total</span>
-              <span>$ 100</span>
+              <span>{formatMoney(total)}</span>
             </div>
           </div>
         </div>
