@@ -8,6 +8,7 @@ import api from '@/src/lib/api';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '@/src/components/UserDashboard/DashboardSidebar';
 import MessageBubble from '@/src/components/UserDashboard/Messages/MessageBubble';
+import { ReportModal } from '@/Moderation/components/ReportModal';
 import type { Status as MessageStatusType } from '@/src/components/UserDashboard/Messages/MessageStatus';
 import { useConversationKey } from '@/src/hooks/useConversationKey';
 import { encryptMessage, decryptMessage } from '@/src/lib/encryption';
@@ -77,6 +78,7 @@ export default function UserMessagesPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSlides, setLightboxSlides] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [reportTargetMessageId, setReportTargetMessageId] = useState<string | null>(null);
   const token = useAuthStore((state) => state.token);
 
   const convKey = useConversationKey(selectedChatId);
@@ -865,6 +867,7 @@ export default function UserMessagesPage() {
                            onReply={handleReplyStart}
                            onScrollToMessage={scrollToMessage}
                            onOpenLightbox={handleOpenLightbox}
+                           onReport={(message) => setReportTargetMessageId(message._id || message.id || null)}
                          />
                        </div>
                      );
@@ -1081,6 +1084,13 @@ export default function UserMessagesPage() {
       index={lightboxIndex}
       plugins={[Video]}
     />
+    {reportTargetMessageId ? (
+      <ReportModal
+        targetId={reportTargetMessageId}
+        targetType="dm"
+        onClose={() => setReportTargetMessageId(null)}
+      />
+    ) : null}
     </>
   );
 }

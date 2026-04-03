@@ -7,6 +7,7 @@ import Image from 'next/image';
 import api from '@/src/lib/api';
 import toast from 'react-hot-toast';
 import MessageBubble from '@/src/components/UserDashboard/Messages/MessageBubble';
+import { ReportModal } from '@/Moderation/components/ReportModal';
 import type { Status as MessageStatusType } from '@/src/components/UserDashboard/Messages/MessageStatus';
 import { useConversationKey } from '@/src/hooks/useConversationKey';
 import { encryptMessage, decryptMessage } from '@/src/lib/encryption';
@@ -74,6 +75,7 @@ export default function MessagesPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSlides, setLightboxSlides] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [reportTargetMessageId, setReportTargetMessageId] = useState<string | null>(null);
   const token = useAuthStore((state) => state.token);
 
   const convKey = useConversationKey(selectedChatId);
@@ -878,6 +880,7 @@ export default function MessagesPage() {
                         onReply={handleReplyStart}
                         onScrollToMessage={scrollToMessage}
                         onOpenLightbox={handleOpenLightbox}
+                        onReport={(message) => setReportTargetMessageId(message._id || message.id || null)}
                       />
                     </div>
                   );
@@ -1094,6 +1097,13 @@ export default function MessagesPage() {
       index={lightboxIndex}
       plugins={[Video]}
     />
+    {reportTargetMessageId ? (
+      <ReportModal
+        targetId={reportTargetMessageId}
+        targetType="dm"
+        onClose={() => setReportTargetMessageId(null)}
+      />
+    ) : null}
     </>
   );
 }
