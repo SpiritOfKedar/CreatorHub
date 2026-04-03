@@ -107,6 +107,9 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
             price={post.price}
             hasAccess={post.hasAccess}
             onUnlockClick={handleUnlockClick}
+            targetId={post._id}
+            targetType="post"
+            showReportButton
           />
           
           <PostMetadata 
