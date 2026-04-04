@@ -7,6 +7,7 @@ const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const creatorRoutes = require('./routes/creatorRoutes');
 const moderationRoutes = require('../frontend/Moderation/routes');
+const adminManagementRoutes = require('../frontend/AdminManagement/routes/admin.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +41,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/livestream', require('./routes/livestreamRoutes'));
 app.use('/api/moderation', moderationRoutes);
+app.use('/api/admin-management', adminManagementRoutes);
 
 app.get('/', (req, res) => {
   res.send('API running...');

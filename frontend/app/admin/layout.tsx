@@ -1,11 +1,80 @@
 "use client"
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { Home, Shield, DollarSign, LayoutGrid, MessageSquare, Settings, Search, FileText, UserPlus, HelpCircle, Brush, BarChart3, Monitor } from 'lucide-react';
+import api from '@/src/lib/api';
+import { useAuthStore } from '@/src/store/useAuthStore';
 
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
+  const logout = useAuthStore((state) => state.logout);
+  const [authResolved, setAuthResolved] = useState(false);
+
+  const redirectToLogin = useMemo(() => {
+    const nextPath = encodeURIComponent(pathname || '/admin');
+    return `/login?next=${nextPath}`;
+  }, [pathname]);
+
+  useEffect(() => {
+    let active = true;
+
+    const verifyAdminAccess = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token) {
+          router.replace(redirectToLogin);
+          return;
+        }
+
+        if (user?.role === 'admin') {
+          if (active) setAuthResolved(true);
+          return;
+        }
+
+        const { data } = await api.get('/auth/profile');
+        if (data?.role === 'admin') {
+          updateUser({
+            _id: data._id,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            avatar: data.avatar,
+            countryOfResidence: data.countryOfResidence,
+            token,
+          });
+          if (active) setAuthResolved(true);
+          return;
+        }
+
+        logout();
+      } catch {
+        logout();
+      }
+    };
+
+    verifyAdminAccess();
+    return () => {
+      active = false;
+    };
+  }, [logout, redirectToLogin, router, updateUser, user?.role]);
+
+  useEffect(() => {
+    if (!authResolved) return;
+    api.patch('/admin-management/me/last-active').catch(() => {});
+  }, [authResolved, pathname]);
+
+  if (!authResolved) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] text-slate-600">
+        <p className="text-sm font-semibold">Checking admin access...</p>
+      </div>
+    );
+  }
 
   const isActive = (path: string) => {
     return pathname === path 
@@ -58,7 +127,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
           <Link href="/admin/platform" className={isActive('/admin/platform')}>
             <LayoutGrid className="w-4 h-4" /> Platform
           </Link>
-          <Link href="/admin/admin-management" className={isActive('/admin/admin-management')}>
+          <Link href="/admin/management" className={isActive('/admin/management')}>
             <Monitor className="w-4 h-4" /> Admin Management
           </Link>
           <Link href="/admin/support" className={isActive('/admin/support')}>
