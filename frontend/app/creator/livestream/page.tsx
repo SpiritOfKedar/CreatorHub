@@ -5,6 +5,7 @@ import { Video, Camera, Mic, MicOff, CameraOff, User, Shield, MessageSquare, Bel
 import api from '@/src/lib/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import FeatureUnavailablePanel from '@/src/components/common/FeatureUnavailablePanel';
 
 export default function CreateLivestreamPage() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function CreateLivestreamPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [featureCheckLoading, setFeatureCheckLoading] = useState(true);
+  const [livestreamEnabled, setLivestreamEnabled] = useState(true);
 
   // Camera preview
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -23,8 +26,40 @@ export default function CreateLivestreamPage() {
   const [cameraAllowed, setCameraAllowed] = useState(false);
   const [cameraError, setCameraError] = useState(false);
 
-  // Start camera preview on mount
   useEffect(() => {
+    let mounted = true;
+
+    const fetchFeatureAvailability = async () => {
+      try {
+        const res = await api.get('/creator/features');
+        const isEnabled = res?.data?.toggles?.livestreaming !== false;
+        if (mounted) {
+          setLivestreamEnabled(isEnabled);
+        }
+      } catch {
+        if (mounted) {
+          setLivestreamEnabled(true);
+        }
+      } finally {
+        if (mounted) {
+          setFeatureCheckLoading(false);
+        }
+      }
+    };
+
+    fetchFeatureAvailability();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Start camera preview only when livestreaming is available
+  useEffect(() => {
+    if (featureCheckLoading || !livestreamEnabled) {
+      return;
+    }
+
     let stream: MediaStream | null = null;
     const startCamera = async () => {
       try {
@@ -44,7 +79,7 @@ export default function CreateLivestreamPage() {
     return () => {
       stream?.getTracks().forEach(t => t.stop());
     };
-  }, []);
+  }, [featureCheckLoading, livestreamEnabled]);
 
   // Bind stream to video element
   useEffect(() => {
@@ -109,11 +144,35 @@ export default function CreateLivestreamPage() {
       }
     } catch (err: any) {
       console.error("Livestream creation error:", err?.response?.data || err?.message || err);
-      toast.error(err?.response?.data?.error || "Failed to start live.");
+      if (err?.response?.data?.error === 'FeatureDisabled') {
+        toast.error('Livestreaming is currently unavailable by platform settings.');
+        setLivestreamEnabled(false);
+      } else {
+        toast.error(err?.response?.data?.error || "Failed to start live.");
+      }
     } finally {
       setPublishing(false);
     }
   };
+
+  if (featureCheckLoading) {
+    return (
+      <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center p-6">
+        <p className="text-slate-500 font-bold animate-pulse">Checking livestream availability...</p>
+      </div>
+    );
+  }
+
+  if (!livestreamEnabled) {
+    return (
+      <FeatureUnavailablePanel
+        title="Livestreaming is currently unavailable"
+        description="Your admin has temporarily disabled livestreaming for creators. You can return once the feature is enabled again."
+        actionLabel="Back to Creator Home"
+        onAction={() => router.push('/creator')}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col xl:flex-row bg-[#f9f9f9] min-h-screen font-sans">

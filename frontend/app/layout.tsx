@@ -45,7 +45,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col font-[var(--font-figtree)] bg-white">
+      <body suppressHydrationWarning className="min-h-full flex flex-col font-[var(--font-figtree)] bg-white">
         <Toaster position="bottom-right" />
         <ModerationProvider />
         <div className="flex-1 shrink-0">{children}</div>

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
+const { checkFeatureToggle } = require('../middleware/featureToggleMiddleware');
 const {
   getDashboardData,
   createPost,
@@ -20,6 +21,7 @@ const {
   markNotificationRead,
   getPayoutSettings,
   updatePayoutSettings,
+  getFeatureAvailability,
   createLivestream,
   getLivestreams,
   getMessages,
@@ -38,6 +40,7 @@ router.use(checkBan);
 router.use(authorize('creator'));
 
 router.get('/dashboard', getDashboardData);
+router.get('/features', getFeatureAvailability);
 router.put('/update-profile', updateCreatorProfile);
 router.get('/analytics', getAnalytics);
 router.get('/subscribers', getSubscribers);
@@ -53,16 +56,16 @@ router.get('/payout-settings', getPayoutSettings);
 router.put('/payout-settings', updatePayoutSettings);
 
 // Livestreams
-router.post('/livestreams', createLivestream);
+router.post('/livestreams', checkFeatureToggle('livestreaming'), createLivestream);
 router.get('/livestreams', getLivestreams);
 
 // Messaging
-router.get('/messages', getMessages);
-router.post('/messages/upload-media', uploadMessageMediaHandler);
-router.post('/messages', sendMessage);
-router.put('/messages/seen/:conversationId', markConversationSeen);
-router.put('/messages/:id/delete', deleteMessage);
-router.put('/messages/:id/edit', editMessage);
+router.get('/messages', checkFeatureToggle('messaging'), getMessages);
+router.post('/messages/upload-media', checkFeatureToggle('messaging'), uploadMessageMediaHandler);
+router.post('/messages', checkFeatureToggle('messaging'), sendMessage);
+router.put('/messages/seen/:conversationId', checkFeatureToggle('messaging'), markConversationSeen);
+router.put('/messages/:id/delete', checkFeatureToggle('messaging'), deleteMessage);
+router.put('/messages/:id/edit', checkFeatureToggle('messaging'), editMessage);
 router.post('/messages/:id/react', reactToMessage);
 router.post('/block/:userId', blockUser);
 router.get('/block/:userId', getBlockStatus);

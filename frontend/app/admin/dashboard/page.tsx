@@ -3,65 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 import { Flag, FileCheck, AlertTriangle } from 'lucide-react';
+import api from '@/src/lib/api';
 
-/* ───────────────────── STATIC DATA ───────────────────── */
-
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-
-const statCards = [
-  {
-    label: 'Total Users',
-    value: '24,580',
-    badge: '+5%',
-    badgeType: 'green' as const,
-    chartData: MONTHS_SHORT.map((m, i) => ({ name: m, val: [45, 60, 85, 50, 30][i] })),
-    barColor: '#F97316',
-    title: 'Total Users Growth',
-    desc: 'How many user using the website',
-  },
-  {
-    label: 'Active Creators',
-    value: '3,120',
-    badge: '+5%',
-    badgeType: 'green' as const,
-    chartData: MONTHS_SHORT.map((m, i) => ({ name: m, val: [65, 40, 85, 70, 30][i] })),
-    barColor: '#1F2937',
-    title: 'Active Creators',
-    desc: 'How many Creators using the website',
-  },
-  {
-    label: 'Monthly Revenue',
-    value: '₹12,40,000',
-    badge: '+5%',
-    badgeType: 'green' as const,
-    chartData: MONTHS_SHORT.map((m, i) => ({ name: m, val: [60, 65, 80, 30, 20][i] })),
-    barColor: '#1F2937',
-    title: 'Total Monthly Revenue',
-    desc: 'Give you the number of revenue you get',
-  },
-  {
-    label: 'Pending Payouts',
-    value: '8,450',
-    badge: '+5%',
-    badgeType: 'red' as const,
-    chartData: MONTHS_SHORT.map((m, i) => ({ name: m, val: [30, 45, 60, 50, 85][i] })),
-    barColor: '#F97316',
-    title: 'Pending Payouts',
-    desc: 'Show case the pending payouts',
-  },
-];
-
-const MONTHS_FULL = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-const revenueMonthly = MONTHS_FULL.map((m, i) => ({
-  name: m,
-  val: [30, 45, 55, 35, 40, 70, 60, 90, 85, 95, 60, 75][i],
-}));
-
-const revenueWeekly = ['Wk1', 'Wk2', 'Wk3', 'Wk4'].map((w, i) => ({
-  name: w,
-  val: [55, 72, 90, 65][i],
-}));
+/* ───────────────────── UTILS ───────────────────── */
 
 const revenueBarGradient = (index: number, total: number) => {
   const ratio = index / (total - 1);
@@ -71,18 +15,6 @@ const revenueBarGradient = (index: number, total: number) => {
   return `rgb(${r},${g},${b})`;
 };
 
-const topCreators = [
-  { initials: 'AM', name: 'Alex Rivera', role: 'Digital Artist', earnings: '₹84k', rank: 1, color: '#6366F1' },
-  { initials: 'SK', name: 'Sarah K.', role: 'Podcaster', earnings: '₹62k', rank: 2, color: '#F97316' },
-  { initials: 'JD', name: 'Jay Dev', role: 'Edu-Tech', earnings: '₹59k', rank: 3, color: '#1F2937' },
-];
-
-const activities = [
-  { dot: '#DC2626', text: '₹100k in lifetime earnings', time: '2 min ago' },
-  { dot: '#EAB308', text: 'Server load at 85%', time: '14 min ago' },
-  { dot: '#1F2937', text: 'New creator application', time: '1 hour ago' },
-];
-
 /* ───────────────────── COMPONENT ───────────────────── */
 
 export default function Dashboard() {
@@ -90,10 +22,29 @@ export default function Dashboard() {
   const [alertVisible, setAlertVisible] = useState(true);
   const [alertFading, setAlertFading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Mount animation trigger
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
+  }, []);
+
+  // Fetch Dashboard API Data
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const res = await api.get('/admin/dashboard');
+        setDashboardData(res.data);
+      } catch (err) {
+        console.error('Failed to fetch dashboard data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
   }, []);
 
   const dismissAlert = () => {
@@ -101,7 +52,71 @@ export default function Dashboard() {
     setTimeout(() => setAlertVisible(false), 400);
   };
 
-  const revenueData = revenuePeriod === 'monthly' ? revenueMonthly : revenueWeekly;
+  if (loading) {
+    return (
+      <div className="p-6 w-full min-h-[calc(100vh-64px)] bg-[#F5F5F8] flex items-center justify-center">
+        <p className="text-[#6B7280] font-medium animate-pulse">Loading dashboard data...</p>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="p-6 w-full min-h-[calc(100vh-64px)] bg-[#F5F5F8] flex items-center justify-center">
+        <p className="text-[#DC2626] font-medium">Failed to load dashboard data. Please try again later.</p>
+      </div>
+    );
+  }
+
+  // Construct dynamic data structure from API payload
+  const statCards = [
+    {
+      label: 'Total Users',
+      value: dashboardData.users?.count || '0',
+      badge: dashboardData.users?.growth || '0%',
+      badgeType: (dashboardData.users?.growth?.includes('-') ? 'red' : 'green') as 'red' | 'green',
+      chartData: dashboardData.users?.data || [],
+      barColor: '#F97316',
+      title: 'Total Users Growth',
+      desc: 'How many user using the website',
+    },
+    {
+      label: 'Active Creators',
+      value: dashboardData.creators?.count || '0',
+      badge: dashboardData.creators?.growth || '0%',
+      badgeType: (dashboardData.creators?.growth?.includes('-') ? 'red' : 'green') as 'red' | 'green',
+      chartData: dashboardData.creators?.data || [],
+      barColor: '#1F2937',
+      title: 'Active Creators',
+      desc: 'How many Creators using the website',
+    },
+    {
+      label: 'Monthly Revenue',
+      value: dashboardData.revenue?.count || '0',
+      badge: dashboardData.revenue?.growth || '0%',
+      badgeType: (dashboardData.revenue?.growth?.includes('-') ? 'red' : 'green') as 'red' | 'green',
+      chartData: dashboardData.revenue?.data || [],
+      barColor: '#1F2937',
+      title: 'Total Monthly Revenue',
+      desc: 'Give you the number of revenue you get',
+    },
+    {
+      label: 'Pending Payouts',
+      value: dashboardData.subscriptions?.count || '0', // Mapping from seed data logic
+      badge: dashboardData.subscriptions?.growth || '0%',
+      badgeType: (dashboardData.subscriptions?.growth?.includes('-') ? 'red' : 'green') as 'red' | 'green',
+      chartData: dashboardData.subscriptions?.data || [],
+      barColor: '#F97316',
+      title: 'Pending Payouts',
+      desc: 'Show case the pending payouts',
+    },
+  ];
+
+  const revenueData = revenuePeriod === 'monthly' ? (dashboardData.revenueOverTime || []) : (dashboardData.revenueWeekly || []);
+  const topCreators = dashboardData.topCreators || [];
+  const activities = dashboardData.recentActivities || [];
+  const miniStats = dashboardData.miniStats || { flaggedContentCount: 0, verificationRequestsCount: 0 };
+  const systemAlert = dashboardData.systemAlert;
 
   return (
     <>
@@ -259,8 +274,7 @@ export default function Dashboard() {
                   />
                   <Bar dataKey="val" radius={[3, 3, 0, 0]}>
                     {revenueData.map((_: any, index: number) => {
-                      // Oct (index 9) is highlighted black; others gradient light→dark
-                      const isHighlight = revenuePeriod === 'monthly' && index === 9;
+                      const isHighlight = revenuePeriod === 'monthly' && index === 9; // Oct highlight
                       return (
                         <Cell
                           key={`rev-${index}`}
@@ -282,9 +296,9 @@ export default function Dashboard() {
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 20 }}>Top Creators</h3>
 
             <div className="flex-1 space-y-0">
-              {topCreators.map((c, i) => (
+              {topCreators.map((c: any, i: number) => (
                 <div
-                  key={c.initials}
+                  key={`${c.initials}-${i}`}
                   className="flex items-center justify-between py-4"
                   style={{ borderBottom: i < topCreators.length - 1 ? '1px solid #F3F4F6' : 'none' }}
                 >
@@ -343,7 +357,7 @@ export default function Dashboard() {
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 16 }}>Recent Activity</h3>
 
             <div className="flex-1 space-y-0">
-              {activities.map((a, i) => (
+              {activities.map((a: any, i: number) => (
                 <div
                   key={i}
                   className="activity-row flex items-center justify-between py-4 px-2 rounded-lg cursor-default"
@@ -381,7 +395,7 @@ export default function Dashboard() {
                   <Flag size={14} color="#6B7280" />
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280' }}>Flagged Content</span>
                 </div>
-                <p style={{ fontSize: 30, fontWeight: 700, color: '#111827', lineHeight: 1 }}>24</p>
+                <p style={{ fontSize: 30, fontWeight: 700, color: '#111827', lineHeight: 1 }}>{miniStats.flaggedContentCount}</p>
                 <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4, lineHeight: 1.4 }}>Pending review from today</p>
               </div>
 
@@ -394,13 +408,13 @@ export default function Dashboard() {
                   <FileCheck size={14} color="#6B7280" />
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280' }}>Verification Requests</span>
                 </div>
-                <p style={{ fontSize: 30, fontWeight: 700, color: '#111827', lineHeight: 1 }}>152</p>
+                <p style={{ fontSize: 30, fontWeight: 700, color: '#111827', lineHeight: 1 }}>{miniStats.verificationRequestsCount}</p>
                 <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4, lineHeight: 1.4 }}>Average wait time: 14h</p>
               </div>
             </div>
 
             {/* System Alert */}
-            {alertVisible && (
+            {systemAlert && systemAlert.isVisible && alertVisible && (
               <div
                 className="rounded-xl p-5"
                 style={{
@@ -415,14 +429,14 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <AlertTriangle size={16} color="#D97706" />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#92400E' }}>System Alert</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#92400E' }}>{systemAlert.type}</span>
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#EA580C', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
-                    HIGH PRIORITY
+                    {systemAlert.priority}
                   </span>
                 </div>
                 <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6, marginBottom: 12 }}>
-                  Detected a 300% spike in withdrawal requests from region: SEA. Possible coordinated exploit or viral event. Security protocols active.
+                  {systemAlert.description}
                 </p>
                 <div className="flex items-center gap-4">
                   <button

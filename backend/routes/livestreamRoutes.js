@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
+const { checkFeatureToggle } = require('../middleware/featureToggleMiddleware');
 const {
   startStream,
   endStream,
@@ -19,8 +20,8 @@ router.get('/:id', getStreamById);
 router.get('/:id/chat', getChatHistory);
 
 // Protected
-router.put('/:id/start', protect, checkBan, startStream);
-router.put('/:id/end', protect, checkBan, endStream);
-router.post('/:id/chat', protect, checkBan, saveChatMessage);
+router.put('/:id/start', protect, checkBan, checkFeatureToggle('livestreaming'), startStream);
+router.put('/:id/end', protect, checkBan, checkFeatureToggle('livestreaming'), endStream);
+router.post('/:id/chat', protect, checkBan, checkFeatureToggle('livestreaming'), saveChatMessage);
 
 module.exports = router;

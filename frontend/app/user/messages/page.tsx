@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Info, Send, Paperclip, AlignLeft, Bold, Italic, Smile, X, Play, Loader2, Image as ImageIcon, ChevronLeft } from 'lucide-react';
+import { Search, Info, Send, Paperclip, AlignLeft, Bold, Italic, Smile, X, Play, Loader2, Image as ImageIcon, ChevronLeft, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import Image from 'next/image';
 import api from '@/src/lib/api';
@@ -79,6 +79,7 @@ export default function UserMessagesPage() {
   const [lightboxSlides, setLightboxSlides] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [reportTargetMessageId, setReportTargetMessageId] = useState<string | null>(null);
+  const [messagingEnabled, setMessagingEnabled] = useState<boolean | null>(null);
   const token = useAuthStore((state) => state.token);
 
   const convKey = useConversationKey(selectedChatId);
@@ -158,8 +159,27 @@ export default function UserMessagesPage() {
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, [token]);
+    let mounted = true;
+
+    api.get('/user/features')
+      .then((res) => {
+        if (!mounted) return;
+        setMessagingEnabled(res?.data?.toggles?.messaging !== false);
+      })
+      .catch(() => {
+        if (mounted) setMessagingEnabled(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (messagingEnabled === true) {
+      fetchMessages();
+    }
+  }, [token, messagingEnabled]);
 
   const activeConversation = useMemo(
     () => conversations.find((c: any) => c.id === selectedChatId),
@@ -677,6 +697,34 @@ export default function UserMessagesPage() {
     // Reset file input so same file can be selected again
     e.target.value = '';
   };
+
+  if (messagingEnabled === null) {
+    return (
+      <div className="flex h-screen bg-[#f6f4f1] overflow-hidden">
+        <DashboardSidebar />
+        <main className="flex-1 md:ml-60 pt-20 md:pt-0 flex items-center justify-center">
+          <p className="text-[#aaa] animate-pulse">Loading...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (messagingEnabled === false) {
+    return (
+      <div className="flex h-screen bg-[#f6f4f1] overflow-hidden">
+        <DashboardSidebar />
+        <main className="flex-1 md:ml-60 pt-20 md:pt-0 flex items-center justify-center">
+          <div className="text-center px-6">
+            <div className="w-16 h-16 rounded-full bg-[#f0ede9] flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="w-6 h-6 text-[#aaa]" />
+            </div>
+            <h3 className="font-semibold text-[#1a1a1a] text-lg mb-1">Messaging Unavailable</h3>
+            <p className="text-[#aaa] text-sm">Direct messaging has been disabled by the platform.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
     return (
      <>

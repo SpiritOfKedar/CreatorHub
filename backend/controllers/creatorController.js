@@ -10,6 +10,7 @@ const Livestream = require('../models/Livestream');
 const Message = require('../models/Message');
 const Block = require('../models/Block');
 const Review = require('../models/Review');
+const { AppSetting } = require('../models/AdminData');
 
 // --- Dashboard ---
 const getDashboardData = async (req, res) => {
@@ -634,6 +635,30 @@ const updatePayoutSettings = async (req, res) => {
     }
 };
 
+const getFeatureAvailability = async (req, res) => {
+  try {
+    const defaultToggles = {
+      livestreaming: true,
+      messaging: true,
+      tips: true,
+      contentLock: false,
+      community: true
+    };
+
+    const settings = await AppSetting.findOne().lean();
+    const toggles = { ...defaultToggles, ...(settings?.toggles || {}) };
+
+    Object.keys(toggles).forEach((key) => {
+      if (toggles[key] === 'false') toggles[key] = false;
+      if (toggles[key] === 'true') toggles[key] = true;
+    });
+
+    res.json({ toggles });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // --- Livestreams ---
 const createLivestream = async (req, res) => {
     upload(req, res, async (err) => {
@@ -989,6 +1014,7 @@ module.exports = {
   markAllCreatorNotificationsRead,
   getPayoutSettings,
   updatePayoutSettings,
+  getFeatureAvailability,
   createLivestream,
   getLivestreams,
   uploadMessageMediaHandler,

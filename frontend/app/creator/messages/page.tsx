@@ -76,6 +76,7 @@ export default function MessagesPage() {
   const [lightboxSlides, setLightboxSlides] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [reportTargetMessageId, setReportTargetMessageId] = useState<string | null>(null);
+  const [messagingEnabled, setMessagingEnabled] = useState<boolean | null>(null);
   const token = useAuthStore((state) => state.token);
 
   const convKey = useConversationKey(selectedChatId);
@@ -162,8 +163,27 @@ export default function MessagesPage() {
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, [token]);
+    let mounted = true;
+
+    api.get('/creator/features')
+      .then((res) => {
+        if (!mounted) return;
+        setMessagingEnabled(res?.data?.toggles?.messaging !== false);
+      })
+      .catch(() => {
+        if (mounted) setMessagingEnabled(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (messagingEnabled === true) {
+      fetchMessages();
+    }
+  }, [token, messagingEnabled]);
 
   const activeConversation = useMemo(
     () => conversations.find((c: any) => c.id === selectedChatId),
@@ -684,6 +704,28 @@ export default function MessagesPage() {
     // Reset file input so same file can be selected again
     e.target.value = '';
   };
+
+  if (messagingEnabled === null) {
+    return (
+      <div className="flex h-[calc(100vh-72px)] items-center justify-center bg-[#f6f4f1]">
+        <p className="text-[#aaa] animate-pulse">Loading...</p>
+      </div>
+    );
+  }
+
+  if (messagingEnabled === false) {
+    return (
+      <div className="flex h-[calc(100vh-72px)] bg-[#f6f4f1] items-center justify-center">
+        <div className="text-center px-6">
+          <div className="w-16 h-16 rounded-full bg-[#f0ede9] flex items-center justify-center mx-auto mb-4">
+            <MessageSquare className="w-6 h-6 text-[#aaa]" />
+          </div>
+          <h3 className="font-semibold text-[#1a1a1a] text-lg mb-1">Messaging Unavailable</h3>
+          <p className="text-[#aaa] text-sm">Direct messaging has been disabled by the platform administrator.</p>
+        </div>
+      </div>
+    );
+  }
 
     return (
      <>

@@ -53,14 +53,21 @@ const appSettingSchema = new mongoose.Schema({
   minPayout: Number,
   currency: String,
   toggles: {
-    livestream: Boolean,
-    courses: Boolean,
+    livestreaming: Boolean,
+    messaging: Boolean,
     tips: Boolean,
-    dm: Boolean,
-    forums: Boolean,
-    AI: Boolean,
-    ageRes: Boolean
-  }
+    contentLock: Boolean,
+    community: Boolean
+  },
+  subscriptionPlans: [{
+    id: String,
+    tierName: String,
+    planName: String,
+    price: mongoose.Schema.Types.Mixed,
+    frequency: String,
+    features: [String],
+    isRecommended: Boolean
+  }]
 });
 const AppSetting = mongoose.model('AppSetting', appSettingSchema);
 
@@ -71,8 +78,18 @@ const appDashboardSchema = new mongoose.Schema({
   revenue: { count: String, growth: String, data: Array },
   subscriptions: { count: String, growth: String, data: Array },
   revenueOverTime: Array,
+  revenueWeekly: Array,
   userGrowth: Array,
-  payoutsData: Array
+  payoutsData: Array,
+  topCreators: Array,
+  recentActivities: Array,
+  miniStats: { flaggedContentCount: Number, verificationRequestsCount: Number },
+  systemAlert: { 
+    type: { type: String }, 
+    description: String, 
+    isVisible: Boolean, 
+    priority: String 
+  }
 });
 const AppDashboard = mongoose.model('AppDashboard', appDashboardSchema);
 

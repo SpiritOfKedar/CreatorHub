@@ -1,15 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
-import type { FeatureToggle } from '@/src/data/platformData';
+import React, { useState, useEffect } from 'react';
+
+interface FeatureToggle {
+  id: string;
+  title: string;
+  description: string;
+  isEnabled: boolean;
+}
 
 interface Props {
   feature: FeatureToggle;
   delay?: number;
+  onToggle?: (id: string, isEnabled: boolean) => void;
 }
 
-export function FeatureToggleRow({ feature, delay = 0 }: Props) {
+export function FeatureToggleRow({ feature, delay = 0, onToggle }: Props) {
   const [enabled, setEnabled] = useState(feature.isEnabled);
+
+  useEffect(() => {
+    setEnabled(feature.isEnabled);
+  }, [feature.isEnabled]);
+
+  const handleToggle = () => {
+    const newState = !enabled;
+    setEnabled(newState);
+    if (onToggle) {
+      onToggle(feature.id, newState);
+    }
+  };
 
   return (
     <div
@@ -29,7 +48,7 @@ export function FeatureToggleRow({ feature, delay = 0 }: Props) {
       </div>
 
       <button
-        onClick={() => setEnabled(!enabled)}
+        onClick={handleToggle}
         style={{
           width: 44,
           height: 24,

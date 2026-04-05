@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
+const { checkFeatureToggle } = require('../middleware/featureToggleMiddleware');
 const {
   getCreators,
   getCreatorProfile,
@@ -39,7 +40,8 @@ const {
   reactToMessage,
   blockUser,
   getBlockStatus,
-  markConversationSeen
+  markConversationSeen,
+  getFeatureAvailability
 } = require('../controllers/creatorController');
 
 // Public routes
@@ -56,16 +58,17 @@ router.get('/reviews/:id/replies', getReviewReplies);
 // Protected routes (for Fans/Users)
 router.use(protect);
 router.use(checkBan);
+router.get('/features', getFeatureAvailability);
 router.put('/update-profile', updateUserProfile);
 router.get('/notifications', getUserNotifications);
 router.put('/notifications/mark-all-read', markAllUserNotificationsRead);
 router.put('/notifications/:id/read', markUserNotificationRead);
-router.get('/messages', getMessages);
-router.post('/messages/upload-media', uploadMessageMediaHandler);
-router.post('/messages', sendMessage);
-router.put('/messages/seen/:conversationId', markConversationSeen);
-router.put('/messages/:id/delete', deleteMessage);
-router.put('/messages/:id/edit', editMessage);
+router.get('/messages', checkFeatureToggle('messaging'), getMessages);
+router.post('/messages/upload-media', checkFeatureToggle('messaging'), uploadMessageMediaHandler);
+router.post('/messages', checkFeatureToggle('messaging'), sendMessage);
+router.put('/messages/seen/:conversationId', checkFeatureToggle('messaging'), markConversationSeen);
+router.put('/messages/:id/delete', checkFeatureToggle('messaging'), deleteMessage);
+router.put('/messages/:id/edit', checkFeatureToggle('messaging'), editMessage);
 router.post('/messages/:id/react', reactToMessage);
 router.post('/block/:userId', blockUser);
 router.get('/block/:userId', getBlockStatus);

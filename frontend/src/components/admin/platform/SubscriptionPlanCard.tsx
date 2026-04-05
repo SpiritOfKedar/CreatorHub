@@ -2,14 +2,24 @@
 
 import React from 'react';
 import { Check } from 'lucide-react';
-import type { SubscriptionPlan } from '@/src/data/platformData';
+
+interface SubscriptionPlan {
+  id: string;
+  tierName: string;
+  planName: string;
+  price: number | string;
+  frequency: string;
+  features: string[];
+  isRecommended: boolean;
+}
 
 interface Props {
   plan: SubscriptionPlan;
   delay?: number;
+  onEdit?: () => void;
 }
 
-export function SubscriptionPlanCard({ plan, delay = 0 }: Props) {
+export function SubscriptionPlanCard({ plan, delay = 0, onEdit }: Props) {
   return (
     <div
       className="relative bg-white rounded-xl flex flex-col justify-between"
@@ -53,7 +63,7 @@ export function SubscriptionPlanCard({ plan, delay = 0 }: Props) {
 
         <div className="flex items-end gap-1 mb-6">
           <span style={{ fontSize: 32, fontWeight: 800, color: '#111827', lineHeight: 1 }}>
-            {typeof plan.price === 'number' ? `₹${plan.price}` : plan.price}
+            {plan.price === 'Custom' ? 'Custom' : typeof plan.price === 'number' ? `₹${plan.price}` : plan.price}
           </span>
           {plan.frequency && (
             <span style={{ fontSize: 13, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>
@@ -77,6 +87,7 @@ export function SubscriptionPlanCard({ plan, delay = 0 }: Props) {
       </div>
 
       <button
+        onClick={onEdit}
         style={{
           width: '100%',
           padding: '12px 0',

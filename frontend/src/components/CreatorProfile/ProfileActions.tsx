@@ -42,8 +42,21 @@ export default function ProfileActions({
       toast.success('Message sent!');
       setIsMsgModalOpen(false);
       setMessageText('');
-    } catch (err) {
-      toast.error('Failed to send message');
+    } catch (err: unknown) {
+      const maybeAxiosError = err as {
+        response?: {
+          status?: number;
+          data?: {
+            error?: string;
+          };
+        };
+      };
+
+      if (maybeAxiosError?.response?.status === 403 && maybeAxiosError?.response?.data?.error === 'FeatureDisabled') {
+        toast.error('Messaging is currently unavailable on this platform.');
+      } else {
+        toast.error('Failed to send message');
+      }
     } finally {
       setIsSending(false);
     }
