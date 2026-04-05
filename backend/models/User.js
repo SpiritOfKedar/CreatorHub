@@ -25,7 +25,8 @@ const userSchema = mongoose.Schema(
       browser: { type: String, default: 'Unknown Browser' },
       os: { type: String, default: 'Unknown OS' },
       ipAddress: { type: String, default: 'Unknown' },
-      createdAt: { type: Date, default: Date.now }
+      createdAt: { type: Date, default: Date.now },
+      lastSeenAt: { type: Date, default: Date.now }
     }],
     otp: { type: String },
     otpExpires: { type: Date },

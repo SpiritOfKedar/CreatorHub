@@ -119,7 +119,14 @@ export function SecuritySection({ settings, onChange }: Props) {
           <input
             type="number"
             value={settings.minPasswordLength}
-            onChange={(e) => onChange('minPasswordLength', Number(e.target.value))}
+            onChange={(e) => {
+              const parsed = Number.parseInt(e.target.value, 10);
+              if (Number.isNaN(parsed)) return;
+              onChange('minPasswordLength', Math.min(64, Math.max(6, parsed)));
+            }}
+            min={6}
+            max={64}
+            step={1}
             style={inputStyle}
           />
         </div>

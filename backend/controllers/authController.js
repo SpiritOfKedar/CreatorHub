@@ -5,6 +5,7 @@ const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
+const { getRuntimeSecuritySettings } = require('../utils/securitySettings');
 const { checkFlagged } = require('../../frontend/Moderation/services/flaggedIdentity.service');
 
 // @desc    Register new user
@@ -65,7 +66,8 @@ const issueSessionToken = async (user, req) => {
     browser,
     os,
     ipAddress,
-    createdAt: new Date()
+    createdAt: new Date(),
+    lastSeenAt: new Date(),
   });
 
   // Keep only the latest 20 sessions to prevent unbounded growth.
@@ -109,6 +111,14 @@ const registerUser = async (req, res) => {
   const { name, email, password, role, username, phone, deviceFingerprint } = req.body;
 
   try {
+    const { minPasswordLength } = await getRuntimeSecuritySettings();
+
+    if (typeof password !== 'string' || password.length < minPasswordLength) {
+      return res
+        .status(400)
+        .json({ message: `Password must be at least ${minPasswordLength} characters long` });
+    }
+
     const flagged = await checkFlagged({
       email,
       phone,
@@ -351,6 +361,13 @@ const resetPassword = async (req, res) => {
   }
 
   try {
+    const { minPasswordLength } = await getRuntimeSecuritySettings();
+    if (String(newPassword).length < minPasswordLength) {
+      return res
+        .status(400)
+        .json({ message: `Password must be at least ${minPasswordLength} characters long` });
+    }
+
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
@@ -468,6 +485,18 @@ const verifyOtp = async (req, res) => {
   }
 };
 
+// @desc    Get runtime security policy
+// @route   GET /api/auth/security-config
+// @access  Public
+const getSecurityConfig = async (req, res) => {
+  try {
+    const { sessionTimeout, minPasswordLength } = await getRuntimeSecuritySettings();
+    res.json({ sessionTimeout, minPasswordLength });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Set user role (after verification)
 // @route   PATCH /api/auth/set-role
 // @access  Private
@@ -528,4 +557,5 @@ module.exports = {
   requestOtp,
   verifyOtp,
   setRole,
+  getSecurityConfig,
 };

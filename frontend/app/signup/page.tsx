@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,12 +21,40 @@ function SignUpForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [minPasswordLength, setMinPasswordLength] = useState(12);
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaRequired, setCaptchaRequired] = useState(false);
   const [captchaRefreshNonce, setCaptchaRefreshNonce] = useState(0);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSecurityConfig = async () => {
+      try {
+        const { data } = await api.get('/auth/security-config');
+        const nextMin = Number.parseInt(String(data?.minPasswordLength), 10);
+        if (mounted && Number.isFinite(nextMin) && nextMin >= 6) {
+          setMinPasswordLength(nextMin);
+        }
+      } catch {
+        // Keep default requirement when settings cannot be fetched.
+      }
+    };
+
+    fetchSecurityConfig();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password.length < minPasswordLength) {
+      toast.error(`Password must be at least ${minPasswordLength} characters`);
+      return;
+    }
 
     if (captchaRequired && !captchaToken) {
       toast.error("Please complete the security check");
@@ -76,7 +104,7 @@ function SignUpForm() {
   };
 
   // Password Validation Logic
-  const hasMinLength = password.length >= 8;
+  const hasMinLength = password.length >= minPasswordLength;
   const hasLowerCase = /[a-z]/.test(password);
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   
@@ -211,6 +239,7 @@ function SignUpForm() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="********"
               required
+              minLength={minPasswordLength}
               className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full pl-6 pr-12 py-4 outline-none focus:border-[#ff9465] transition-colors text-base text-[#1a1a1a] font-medium placeholder:text-[#9a9a9a]"
               style={{ fontFamily: "'Inter', sans-serif" }}
             />
@@ -237,7 +266,7 @@ function SignUpForm() {
           <div className="flex flex-col gap-1.5 ml-2">
             <div className="flex items-center gap-2">
               {hasMinLength ? <CheckCircle2 size={16} className="text-[#f95c4b]" /> : <Circle size={16} className="text-gray-400" />}
-              <span className={`text-sm ${hasMinLength ? 'text-[#3a3a3a]' : 'text-gray-500'}`}>8 characters</span>
+              <span className={`text-sm ${hasMinLength ? 'text-[#3a3a3a]' : 'text-gray-500'}`}>{minPasswordLength} characters</span>
             </div>
             <div className="flex items-center gap-2">
               {hasLowerCase ? <CheckCircle2 size={16} className="text-[#f95c4b]" /> : <Circle size={16} className="text-gray-400" />}

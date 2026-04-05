@@ -34,6 +34,10 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState<any>(DEFAULTS);
 
+  const getErrorMessage = (error: any, fallback: string) => {
+    return error?.response?.data?.message || error?.response?.data?.error || fallback;
+  };
+
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
@@ -44,8 +48,8 @@ export default function SettingsPage() {
       try {
         const res = await api.get('/admin/settings');
         setSettings({ ...DEFAULTS, ...res.data });
-      } catch {
-        toast.error('Failed to load settings');
+      } catch (error: any) {
+        toast.error(getErrorMessage(error, 'Failed to load settings'));
       } finally {
         setIsLoading(false);
       }
@@ -60,10 +64,11 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await api.put('/admin/settings', settings);
+      const res = await api.put('/admin/settings', settings);
+      setSettings({ ...DEFAULTS, ...res.data });
       toast.success('Settings saved successfully!');
-    } catch {
-      toast.error('Failed to save settings');
+    } catch (error: any) {
+      toast.error(getErrorMessage(error, 'Failed to save settings'));
     } finally {
       setIsSaving(false);
     }
@@ -75,8 +80,8 @@ export default function SettingsPage() {
       const res = await api.post('/admin/settings/reset');
       setSettings({ ...DEFAULTS, ...res.data });
       toast.success('Settings reset to default');
-    } catch {
-      toast.error('Failed to reset settings');
+    } catch (error: any) {
+      toast.error(getErrorMessage(error, 'Failed to reset settings'));
     }
   };
 

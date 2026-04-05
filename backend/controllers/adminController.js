@@ -126,6 +126,13 @@ exports.getDashboardData = async (req, res) => {
 
 // --- Legacy Endpoints for Other Admin Panels ---
 const { AppUser, AppReport, AppTransaction, AppTicket, AppSetting, AppDashboard } = require('../models/AdminData');
+const {
+  DEFAULT_SESSION_TIMEOUT,
+  DEFAULT_MIN_PASSWORD_LENGTH,
+  normalizeSessionTimeout,
+  normalizeMinPasswordLength,
+  getRuntimeSecuritySettings,
+} = require('../utils/securitySettings');
 
 exports.getAllData = async (req, res) => {
   try {
@@ -178,6 +185,25 @@ exports.getSettings = async (req, res) => {
       settings = new AppSetting();
       await settings.save();
     }
+
+    const normalizedSessionTimeout = normalizeSessionTimeout(settings.sessionTimeout);
+    const normalizedMinPasswordLength = normalizeMinPasswordLength(settings.minPasswordLength);
+    let shouldPersistNormalization = false;
+
+    if (settings.sessionTimeout !== normalizedSessionTimeout) {
+      settings.sessionTimeout = normalizedSessionTimeout;
+      shouldPersistNormalization = true;
+    }
+
+    if (settings.minPasswordLength !== normalizedMinPasswordLength) {
+      settings.minPasswordLength = normalizedMinPasswordLength;
+      shouldPersistNormalization = true;
+    }
+
+    if (shouldPersistNormalization) {
+      await settings.save();
+    }
+
     res.status(200).json(settings.toObject());
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -198,6 +224,14 @@ exports.saveSettings = async (req, res) => {
     allowed.forEach((key) => {
       if (req.body[key] !== undefined) update[key] = req.body[key];
     });
+
+    if (Object.prototype.hasOwnProperty.call(update, 'sessionTimeout')) {
+      update.sessionTimeout = normalizeSessionTimeout(update.sessionTimeout);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(update, 'minPasswordLength')) {
+      update.minPasswordLength = normalizeMinPasswordLength(update.minPasswordLength);
+    }
 
     const settings = await AppSetting.findOneAndUpdate(
       {},
@@ -228,8 +262,8 @@ exports.resetSettings = async (req, res) => {
       stripeConnected: false,
       twoFactorEnabled: true,
       botProtectionEnabled: false,
-      sessionTimeout: '30 Minutes',
-      minPasswordLength: 12,
+      sessionTimeout: DEFAULT_SESSION_TIMEOUT,
+      minPasswordLength: DEFAULT_MIN_PASSWORD_LENGTH,
     };
 
     const settings = await AppSetting.findOneAndUpdate(
@@ -251,14 +285,44 @@ exports.getAdminSessions = async (req, res) => {
       return res.status(404).json({ message: 'Admin user not found' });
     }
 
-    const sessions = [...(user.sessions || [])]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    const { sessionTimeoutMs } = await getRuntimeSecuritySettings();
+    const now = Date.now();
+    const sessionsBeforeCleanup = user.sessions || [];
+    const activeSessions = sessionsBeforeCleanup.filter((session) => {
+      // Keep legacy sessions without lastSeenAt; they are upgraded by auth middleware.
+      if (!session.lastSeenAt) {
+        return true;
+      }
+
+      const lastSeenMs = new Date(session.lastSeenAt).getTime();
+      const createdAtMs = session.createdAt ? new Date(session.createdAt).getTime() : Number.NaN;
+      const activityMs = Number.isFinite(lastSeenMs) ? lastSeenMs : createdAtMs;
+
+      if (!Number.isFinite(activityMs)) {
+        return true;
+      }
+
+      return now - activityMs <= sessionTimeoutMs;
+    });
+
+    if (activeSessions.length !== sessionsBeforeCleanup.length) {
+      user.sessions = activeSessions;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    const sessions = [...activeSessions]
+      .sort((a, b) => {
+        const aMs = new Date(a.lastSeenAt || a.createdAt || 0).getTime();
+        const bMs = new Date(b.lastSeenAt || b.createdAt || 0).getTime();
+        return bMs - aMs;
+      })
       .map((session) => ({
         sessionId: session.sessionId,
         browser: session.browser || 'Unknown Browser',
         os: session.os || 'Unknown OS',
         ipAddress: session.ipAddress || 'Unknown',
         createdAt: session.createdAt,
+        lastSeenAt: session.lastSeenAt,
         isCurrent: session.sessionId === req.sessionId,
       }));
 
