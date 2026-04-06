@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const streamifier = require('streamifier');
 const cloudinary = require('../utils/cloudinary');
+const { getPlatformFee } = require('../../frontend/CreatorSubscription/utils/subscriptionHelpers');
 
 const profileUpload = multer({ storage: multer.memoryStorage() }).single('avatar');
 
@@ -729,7 +730,7 @@ exports.getFavoritePosts = async (req, res) => {
 // @desc    Toggle subscription
 exports.toggleSubscription = async (req, res) => {
   try {
-    const creator = await Creator.findById(req.params.creatorId);
+    const creator = await Creator.findById(req.params.creatorId).populate('subscriptionId');
     if (!creator) return res.status(404).json({ message: 'Creator not found' });
     
     const user = await User.findById(req.user._id);
@@ -745,8 +746,11 @@ exports.toggleSubscription = async (req, res) => {
     } else {
       user.memberships.addToSet(creator._id);
       creator.subscribers.addToSet(user._id);
-      creator.earnings.total += (creator.subscriptionPrice || 0);
-      creator.earnings.thisMonth += (creator.subscriptionPrice || 0);
+      const grossAmount = Number(creator.subscriptionPrice || 0);
+      const platformFeePercent = getPlatformFee(creator.subscriptionId);
+      const netAmount = Math.max(0, grossAmount - (grossAmount * platformFeePercent) / 100);
+      creator.earnings.total += netAmount;
+      creator.earnings.thisMonth += netAmount;
     }
     await user.save();
     await creator.save();
@@ -816,10 +820,14 @@ exports.purchaseExclusivePost = async (req, res) => {
     });
 
     if (post.creatorId?._id) {
+      const creatorDoc = await Creator.findById(post.creatorId._id).populate('subscriptionId');
+      const platformFeePercent = getPlatformFee(creatorDoc?.subscriptionId);
+      const netAmount = Math.max(0, price - (price * platformFeePercent) / 100);
+
       await Creator.findByIdAndUpdate(post.creatorId._id, {
         $inc: {
-          'earnings.total': price,
-          'earnings.thisMonth': price
+          'earnings.total': netAmount,
+          'earnings.thisMonth': netAmount
         }
       });
     }

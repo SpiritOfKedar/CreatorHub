@@ -14,6 +14,40 @@ export default function TicketDetailDrawer({ open, ticket, adminRole, onClose, o
   const report = ticket.reportId || {};
   const otherReporterCount = Math.max(0, (ticket.reporterCount || 1) - 1);
 
+  const targetType = report.targetType;
+  const targetId = report.targetId;
+  const postTitle = ticket.targetContent?.title || 'Reported post';
+
+  const reportedContentCta = (() => {
+    if (!targetType || !targetId) return null;
+
+    if (targetType === 'post') {
+      return {
+        href: `/user/posts/${targetId}`,
+        label: 'Open Reported Post',
+        description: postTitle,
+      };
+    }
+
+    if (targetType === 'user') {
+      return {
+        href: `/admin/users/${targetId}`,
+        label: 'Open Reported User',
+        description: ticket.targetContent?.name || 'Reported user',
+      };
+    }
+
+    if (targetType === 'dm') {
+      return {
+        href: '/admin/support',
+        label: 'Open Message Context',
+        description: 'Reported DM content is available in support context.',
+      };
+    }
+
+    return null;
+  })();
+
   return (
     <div className="fixed inset-0 z-[260]">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
@@ -36,7 +70,21 @@ export default function TicketDetailDrawer({ open, ticket, adminRole, onClose, o
         <Section title="Reporter Comment"><p className="text-sm text-slate-700">{report.comment || 'No comment.'}</p></Section>
 
         <Section title="Reported Content">
-          <pre className="max-h-56 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-700">{JSON.stringify(ticket.targetContent || {}, null, 2)}</pre>
+          {reportedContentCta ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="mb-2 text-sm text-slate-700">{reportedContentCta.description}</p>
+              <a
+                href={reportedContentCta.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700"
+              >
+                {reportedContentCta.label}
+              </a>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No reported content link available.</p>
+          )}
         </Section>
 
         <Section title="Also Reported By"><p className="text-sm text-slate-700">{otherReporterCount} other users</p></Section>

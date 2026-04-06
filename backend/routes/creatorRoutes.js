@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
+const { checkBan } = require('../middleware/checkBan');
 const { checkFeatureToggle } = require('../middleware/featureToggleMiddleware');
 const {
   getDashboardData,
@@ -34,10 +34,11 @@ const {
   getBlockStatus,
   markConversationSeen
 } = require('../controllers/creatorController');
+const creatorSubscriptionRoutes = require('../../frontend/CreatorSubscription/routes/subscription.routes');
 
 router.use(protect);
-router.use(checkBan);
 router.use(authorize('creator'));
+router.use('/subscription', creatorSubscriptionRoutes);
 
 router.get('/dashboard', getDashboardData);
 router.get('/features', getFeatureAvailability);
@@ -53,7 +54,7 @@ router.put('/notifications/:id/read', markNotificationRead);
 
 // Payouts
 router.get('/payout-settings', getPayoutSettings);
-router.put('/payout-settings', updatePayoutSettings);
+router.put('/payout-settings', checkBan, updatePayoutSettings);
 
 // Livestreams
 router.post('/livestreams', checkFeatureToggle('livestreaming'), createLivestream);
@@ -61,7 +62,7 @@ router.get('/livestreams', getLivestreams);
 
 // Messaging
 router.get('/messages', checkFeatureToggle('messaging'), getMessages);
-router.post('/messages/upload-media', checkFeatureToggle('messaging'), uploadMessageMediaHandler);
+router.post('/messages/upload-media', checkBan, checkFeatureToggle('messaging'), uploadMessageMediaHandler);
 router.post('/messages', checkFeatureToggle('messaging'), sendMessage);
 router.put('/messages/seen/:conversationId', checkFeatureToggle('messaging'), markConversationSeen);
 router.put('/messages/:id/delete', checkFeatureToggle('messaging'), deleteMessage);
@@ -71,11 +72,12 @@ router.post('/block/:userId', blockUser);
 router.get('/block/:userId', getBlockStatus);
 
 // Post routing
-router.post('/posts', createPost);
+router.post('/posts', checkBan, createPost);
 router.get('/posts', getPosts);
 router.get('/posts/:id', getPostById);
-router.put('/posts/:id', updatePost);
-router.delete('/posts/:id', deletePost);
+router.patch('/posts/:id', checkBan, updatePost);
+router.put('/posts/:id', checkBan, updatePost);
+router.delete('/posts/:id', checkBan, deletePost);
 
 // Social links routing
 router.get('/social-links', getSocialLinks);

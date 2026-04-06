@@ -8,7 +8,7 @@ const BanSchema = new mongoose.Schema(
     duration: { type: String, enum: ['1w', '2w', '1m', 'permanent'], required: true },
     reason: { type: String, required: true },
     issuedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    relatedReportId: { type: mongoose.Schema.Types.ObjectId, ref: 'Report' },
+    relatedReportId: { type: mongoose.Schema.Types.ObjectId, ref: 'ModerationReport' },
     expiresAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true, index: true },
     appealStatus: { type: String, enum: APPEAL_STATUSES, default: 'none', index: true },

@@ -28,18 +28,26 @@ async function assignTicket(ticketId, assignToAdminId, assignedByAdminId) {
   if (ticket.status === 'open') ticket.status = 'in_progress';
   await ticket.save();
 
-  await createNotification(
-    assignee._id,
-    'report_update',
-    'Ticket assigned',
-    `You were assigned ${ticket.ticketId}.`,
-    { ticketId: ticket.ticketId }
-  );
+  try {
+    await createNotification(
+      assignee._id,
+      'report_update',
+      'Ticket assigned',
+      `You were assigned ${ticket.ticketId}.`,
+      { ticketId: ticket.ticketId }
+    );
+  } catch (error) {
+    console.warn('Ticket assignment notification failed:', error?.message || error);
+  }
 
-  await log(assignedByAdminId, 'ticket_assigned', ticket._id, 'ticket', 'Ticket assigned to admin', {
-    ticketId: ticket.ticketId,
-    assignedTo: assignee._id,
-  });
+  try {
+    await log(assignedByAdminId, 'ticket_assigned', ticket._id, 'ticket', 'Ticket assigned to admin', {
+      ticketId: ticket.ticketId,
+      assignedTo: assignee._id,
+    });
+  } catch (error) {
+    console.warn('Ticket assignment audit log failed:', error?.message || error);
+  }
 
   return ticket;
 }

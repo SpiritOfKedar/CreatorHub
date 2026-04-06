@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
+const { superAdminOnly } = require('../../frontend/AdminManagement/middleware/superAdminOnly.middleware');
+const { approveEnterpriseHandler } = require('../../frontend/CreatorSubscription/controllers/subscription.controller');
 const {
 	getAllData,
 	updateUser,
@@ -43,5 +45,6 @@ router.delete('/sessions', revokeAllOtherAdminSessions);
 router.get('/platform/settings', getPlatformSettings);
 router.put('/platform/settings/toggle', updatePlatformToggle);
 router.put('/platform/plans/:id', updateSubscriptionPlan);
+router.patch('/subscription/:subscriptionId/approve', superAdminOnly, approveEnterpriseHandler);
 
 module.exports = router;

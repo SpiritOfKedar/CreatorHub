@@ -6,7 +6,7 @@ export default function SampleModerationLandingPage() {
       <h1 className="text-2xl font-bold text-slate-900">Sample Moderation</h1>
       <p className="text-sm text-slate-600">Standalone moderation sandbox. Existing admin services remain unchanged.</p>
       <div className="grid md:grid-cols-2 gap-4 max-w-2xl">
-        <Link href="/admin/reports" className="border rounded-xl p-4 bg-white hover:bg-slate-50">
+        <Link href="/admin/sample-moderation/reports" className="border rounded-xl p-4 bg-white hover:bg-slate-50">
           <h3 className="font-semibold">Reports Queue</h3>
           <p className="text-sm text-slate-500 mt-1">Review and resolve reported posts, users, and DMs.</p>
         </Link>

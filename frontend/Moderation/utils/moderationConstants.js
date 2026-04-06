@@ -30,6 +30,13 @@ const ADMIN_ACTIONS = [
   'appeal_denied',
   'identity_flagged',
   'admin_route_access',
+  'ticket_assigned',
+  'ticket_open',
+  'ticket_in_progress',
+  'ticket_resolved',
+  'ticket_dismissed',
+  'ticket_escalated',
+  'ticket_responded',
 ];
 
 module.exports = {

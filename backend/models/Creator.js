@@ -22,6 +22,7 @@ const creatorSchema = mongoose.Schema(
       total: { type: Number, default: 0 },
       thisMonth: { type: Number, default: 0 },
     },
+    subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', default: null },
     subscriptionPrice: { type: Number, default: 4.99 },
     payoutSettings: {
       kyc: { 
@@ -48,4 +49,14 @@ const creatorSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Creator', creatorSchema);
+creatorSchema.virtual('subscription', {
+  ref: 'Subscription',
+  localField: 'subscriptionId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+creatorSchema.set('toJSON', { virtuals: true });
+creatorSchema.set('toObject', { virtuals: true });
+
+module.exports = mongoose.models.Creator || mongoose.model('Creator', creatorSchema);

@@ -12,7 +12,7 @@ const ReportSchema = new mongoose.Schema(
     additionalReporters: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     resolution: { type: String, default: '' },
-    duplicateOf: { type: mongoose.Schema.Types.ObjectId, ref: 'Report', default: null },
+    duplicateOf: { type: mongoose.Schema.Types.ObjectId, ref: 'ModerationReport', default: null },
     targetOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
   },
   {
@@ -23,4 +23,4 @@ const ReportSchema = new mongoose.Schema(
 
 ReportSchema.index({ targetId: 1, targetType: 1, status: 1 });
 
-module.exports = mongoose.models.Report || mongoose.model('Report', ReportSchema);
+module.exports = mongoose.models.ModerationReport || mongoose.model('ModerationReport', ReportSchema);

@@ -87,6 +87,7 @@ async function getTickets({ status = 'open', page = 1, limit = 10, requesterAdmi
       .limit(l)
       .populate({
         path: 'reportId',
+        model: 'ModerationReport',
         select: 'targetType reason comment targetId reportedBy additionalReporters',
         populate: { path: 'reportedBy', select: 'name email' },
       })
@@ -111,6 +112,7 @@ async function getTicketById(ticketId) {
   const ticket = await Ticket.findOne({ ticketId })
     .populate({
       path: 'reportId',
+      model: 'ModerationReport',
       select: 'targetType reason comment targetId reportedBy additionalReporters targetOwnerId createdAt',
       populate: { path: 'reportedBy', select: 'name email avatar' },
     })
@@ -157,7 +159,7 @@ async function updateTicketStatus(ticketId, status, adminId, resolutionNote = ''
     throw err;
   }
 
-  const ticket = await Ticket.findOne({ ticketId }).populate('reportId');
+  const ticket = await Ticket.findOne({ ticketId }).populate({ path: 'reportId', model: 'ModerationReport' });
   if (!ticket) {
     const err = new Error('Ticket not found.');
     err.statusCode = 404;
