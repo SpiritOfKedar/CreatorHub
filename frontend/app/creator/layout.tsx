@@ -78,6 +78,14 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
 
   const isBanned = Boolean(activeBan?.isActive);
   const showAppealBadge = isBanned && canAppeal;
+  const subscriptionData =
+    subscription && typeof subscription === 'object'
+      ? (subscription as Record<string, unknown>)
+      : null;
+  const currentPlan =
+    typeof subscriptionData?.plan === 'string' ? subscriptionData.plan : 'free';
+  const currentStatus =
+    typeof subscriptionData?.status === 'string' ? subscriptionData.status : 'active';
 
   const activateFreeFromPopup = async () => {
     try {
@@ -169,8 +177,8 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
             Appeal
           </Link>
           <SubscriptionNavItem
-            currentPlan={subscription?.plan ?? 'free'}
-            status={subscription?.status ?? 'active'}
+            currentPlan={currentPlan}
+            status={currentStatus}
             className={isActive('/creator/subscription')}
           />
           {isBanned ? (
